@@ -2,12 +2,13 @@
   <div class="hello">
     <h1>{{ msg }}</h1>
     <h2> THIS IS HELIKS ON A ROLL </h2>
-    ------------ o||o ------------
-                  /\
-                ||||||
-                ~~~~~~
-
-    <h2>Essential Links</h2>
+    <div class="center-fold">
+    ------------ o||o ------------ <br>
+                  /\ <br>
+                |||||| <br>
+                ~~~~~~ <br>
+    </div>
+    <h2>Essential Links:::</h2>
     <ul>
       <li>
         <a
@@ -116,4 +117,17 @@ li {
 a {
   color: #42b983;
 }
+
+.center-fold {
+    vertical-align: middle;
+    text-align: center;
+    margin: 0 auto;
+    width: 300px;
+    display: block;
+    color: skyblue;
+    font-size: 24px;
+    border: 5px solid palevioletred;
+    padding: 10px;
+}
+
 </style>
