@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import HelloWorld from '@/components/HelloWorld'
 import HeliksMap from '@/components/HeliksMap'
 import PlantCollection from '@/components/PlantCollection'
+import SlideGallery from '@/components/SlideGallery'
 Vue.use(Router)
 
 export default new Router({
@@ -21,6 +22,11 @@ export default new Router({
       path: '/plantesamling',
       name: 'PlantCollection',
       component: PlantCollection
+    },
+    {
+      path: '/bildegalleri',
+      name: 'SlideGallery',
+      component: SlideGallery
     }
   ]
 })
