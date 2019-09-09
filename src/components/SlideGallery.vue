@@ -1,8 +1,6 @@
 <template id="SlideGallery">
   <div class="viewport" id="app">
-
     <main class="main">
-
       <transition name="main__slider">
         <transition-group v-if="loaded" tag="div" class="main__slider" name="main__slide-image" mode="out-in">
           <img class="main__slide-image" alt="" v-for="(slide, index) of slides" :key="index" :src="slide.img" v-if="index === currentActiveSlide" />
@@ -12,61 +10,56 @@
         <span v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="main__headline-span enhanced-bg">{{ slide.headline }}</span
             >
       </transition-group>
-        </main>
-        <aside class="aside">
+    </main>
 
-          <!-- TODO : catch arrow keys navigation -->
-          <transition name="aside__nav">
-            <div class="aside__nav" v-if="loaded">
-              <button class="aside__button" @click="incrementSlide(-1)">←</button
-              ><button class="aside__button" @click="incrementSlide(1)">→</button>
-            </div>
-          </transition>
-          <transition name="aside__slider">
-            <transition-group
-              v-if="loaded"
-              tag="div"
-              class="aside__slider"
-              name="aside__slide-image"
-              mode="out-in"
-              ref="aside"
-            >
-              <img
-                class="aside__slide-image"
-                alt=""
-                v-for="(slide, index) of slides"
-                :key="index"
-                :src="slide.img"
-                v-if="index === nextActiveSlide"
-              />
-            </transition-group>
-          </transition>
-
-          <transition-group tag="div" class=" small" name="main__headline-spanXX" mode="out-in">
-            <span v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="main__headline-spanXX">{{ slide.headline }}</span
-                >
-                <hr>
-            <span v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="">{{ slide.description }}</span
-                    >
-          </transition-group>
-
-
-
-          <transition name="progress-indicator">
-            <ul
-              class="progress-indicator"
-              :data-slides-count="'0' + slides.length"
-              v-if="loaded"
-            >
-              <li
-                v-for="(slide,index) of slides"
-                :class="index === currentActiveSlide ? 'progress-indicator__bar  progress-indicator__bar--active' : 'progress-indicator__bar'"
-                :key="index"
-              ></li>
-            </ul>
-          </transition>
-        </aside>
-      </div>
+    <aside class="aside">
+      <!-- TODO : catch arrow keys navigation -->
+      <transition name="aside__nav">
+        <div class="aside__nav" v-if="loaded">
+          <button class="aside__button" @click="incrementSlide(-1)">←</button>
+          <button class="aside__button" @click="incrementSlide(1)">→</button>
+        </div>
+      </transition>
+      <transition name="aside__slider">
+        <transition-group
+          v-if="loaded"
+          tag="div"
+          class="aside__slider"
+          name="aside__slide-image"
+          mode="out-in"
+          ref="aside"
+        >
+          <img
+            class="aside__slide-image"
+            alt=""
+            v-for="(slide, index) of slides"
+            :key="index"
+            :src="slide.img"
+            v-if="index === nextActiveSlide"
+          />
+        </transition-group>
+      </transition>
+      <transition-group tag="div" class="small" name="main__headline-spanXX" mode="out-in">
+        <div v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="main__headline-spanXX">{{ slide.headline }}</div
+          >
+        <div v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="">{{ slide.description }}</div
+          >
+      </transition-group>
+      <transition name="progress-indicator">
+        <ul
+          class="progress-indicator"
+          :data-slides-count="'0' + slides.length"
+          v-if="loaded"
+        >
+          <li
+            v-for="(slide,index) of slides"
+            :class="index === currentActiveSlide ? 'progress-indicator__bar  progress-indicator__bar--active' : 'progress-indicator__bar'"
+            :key="index"
+          ></li>
+        </ul>
+      </transition>
+    </aside>
+  </div>
 </template>
 
 <script>
@@ -141,20 +134,18 @@ updated() {
   );
 },
 methods: {
-  incrementSlide(val) {
-    if (val > 0 && this.currentActiveSlide + val < this.slides.length) {
-      this.currentActiveSlide += val;
-    } else if (val > 0) {
-      this.currentActiveSlide = 0;
-    } else if (val < 0 && this.currentActiveSlide + val < 0) {
-      this.currentActiveSlide = this.slides.length - 1;
-    } else {
-      this.currentActiveSlide += val;
+    incrementSlide(val) {
+      if (val > 0 && this.currentActiveSlide + val < this.slides.length) {
+        this.currentActiveSlide += val;
+      } else if (val > 0) {
+        this.currentActiveSlide = 0;
+      } else if (val < 0 && this.currentActiveSlide + val < 0) {
+        this.currentActiveSlide = this.slides.length - 1;
+      } else {
+        this.currentActiveSlide += val;
+      }
     }
   }
-}
-
-
 }
 </script>
 
@@ -391,8 +382,8 @@ body {
   padding: 1rem;
   &__nav {
     position: absolute;
-    bottom: 0;
-    left: -10rem;
+    bottom: 2rem;
+    left: -6rem;
     transform: translateY(0);
     &-enter,
     &-leave-to {
@@ -461,7 +452,7 @@ body {
     font-weight: 900;
     font-size: 2rem;
     width: 10rem;
-    height: 10rem;
+    height: 2rem;
     margin: 0;
     cursor: pointer;
     border: 0;
@@ -484,7 +475,7 @@ body {
   font-weight: 900;
   position: absolute;
   right: 5rem;
-  bottom: 3rem;
+  bottom: -1rem;
   display: grid;
   grid-auto-flow: column;
   grid-gap: 1rem;
@@ -502,8 +493,8 @@ body {
     transition: all 300ms;
   }
   &__bar {
-    width: 1.5rem;
-    height: 0.2rem;
+    width: 1.25rem;
+    height: 1.25rem;
     transition: all 200ms;
     background: var(--color--secondary);
     &--active {
