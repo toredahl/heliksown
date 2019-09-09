@@ -15,8 +15,10 @@
     "eslint": "^5.16.0",
     "express": "^4.17.1",
     "jquery": "^3.4.1",
+    "node-vibrant": "^3.1.4",
     "popper": "^1.0.1",
     "popper.js": "^1.15.0",
+    "vibrant": "0.0.1",
     "vue": "^2.5.2",
     "vue-resource": "^1.5.1",
     "vue-router": "^3.0.1"

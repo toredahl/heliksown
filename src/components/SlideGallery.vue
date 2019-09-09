@@ -1,5 +1,8 @@
+import Vibrant from 'node-vibrant';
+
 <template id="SlideGallery">
   <div class="viewport" id="app">
+
     <main class="main">
       <transition name="main__slider">
         <transition-group v-if="loaded" tag="div" class="main__slider" name="main__slide-image" mode="out-in">
@@ -29,23 +32,28 @@
           mode="out-in"
           ref="aside"
         >
-          <img
-            class="aside__slide-image"
-            alt=""
-            v-for="(slide, index) of slides"
-            :key="index"
-            :src="slide.img"
-            v-if="index === nextActiveSlide"
-          />
+        <img
+          class="aside__slide-image"
+          alt=""
+          v-for="(slide, index) of slides"
+          :key="index"
+          :src="slide.img"
+          v-if="index === nextActiveSlide"
+        />
         </transition-group>
       </transition>
-      <transition-group tag="div" class="small" name="main__headline-spanXX" mode="out-in">
-        <div v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="main__headline-spanXX">{{ slide.headline }}</div
-          >
-        <div v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="">{{ slide.description }}</div
-          >
+      <transition-group tag="div" class="small infobox" name="main__headline-span" mode="out-in">
+        <div v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="main__headline-span">
+        <h3>  {{ slide.headline }} </h3>
+        </div>
+        <div v-for="(slide, index) of slides" :key="index" v-if="index === currentActiveSlide" class="">
+          <strong>Beskrivelse:</strong> {{ slide.description }} <br>
+          <strong>Notis:</strong> {{ slide.notes }} <br>
+          <strong>Anskaffet:</strong> {{ slide.aquired }} <br>
+          <strong>Pris:</strong> {{ slide.price }}
+        </div>
       </transition-group>
-      <transition name="progress-indicator">
+      <!--transition name="progress-indicator">
         <ul
           class="progress-indicator"
           :data-slides-count="'0' + slides.length"
@@ -57,8 +65,9 @@
             :key="index"
           ></li>
         </ul>
-      </transition>
+      </transition -->
     </aside>
+
   </div>
 </template>
 
@@ -76,25 +85,37 @@ export default {
       {
         headline: "Philodendron xanadu",
         img: "https://mediasv6.truffaut.com/Articles/jpg/0620000/620220_001_1000.jpg",
-        description: "Philodendron xanadu eventually forms dense clumps up to 1.5 metres tall by 2 metres wide. It has deeply dissected, lobed leaves up to 40 cm long by 30 cm wide glossy green leaves.",
+        description: "Philodendron xanadu, kan bli ca 150 cm. Opprinnelig fra Brasil, Araceae-familien.",
+        aquired: "Passiflora, 2019",
+        notes: "Virker ikke som den trenger mye vann, kan og stå langt inne i rommet. Denne har ganske små blader. ",
+        price: 700,
         color: null
       },
       {
         headline: "Monstera adonsonii",
         img: "https://cdn.shopify.com/s/files/1/1706/1307/products/Monstera-adansonii-Philodendron-Monkey-Mask-Large.jpg?v=1557652521",
-        description: "også kalt peru",
+        description: "Kalles også Monkeyface, er litt mindre enn vanlig deliciosa, men bladene kan bli store på eldre eksemplarer",
+        notes: "Har vokst en del sommeren 2019, ",
+        aquired: "Solheim gartneri, 2019",
+        price: 159,
         color: null
       },
       {
         headline: "Monstera deliciosa borsigiana",
         img: "https://img.crocdn.co.uk/images/products2/pl/20/00/03/20/pl2000032008.jpg",
-        description: "variegert monstera finnes i to varianter, thai og borsigiana",
+        description: "Variegert monstera finnes i to varianter, thai og borsigiana. Thai beholder variegeringen, mens borsigiana kan miste sin, man bør derfor ta vekk grener med helgrønne eller nesten helt grønne blader.",
+        notes: "Holder den unna direkte sollys, gjerne 2 meter inn i rommet, i mitt tilfelle blir det nærmere tre",
+        aquired: "Floriss, Bryn senter, 2019",
+        price: 1200,
         color: null
       },
       {
         headline: "Philodendron birkin",
         img: "https://www.gardentags.com/plant-encyclopedia/images/40244/philodendron-birkin.jpeg",
-        description: "meget nydelig plante",
+        description: "Meget pen philodendron",
+        notes: "Alt for dyr, i grunnen, og var attpåtil på salg. Bør ha mye lys for å beholde de hvite stripene",
+        aquired: "Wellplanting, 2019",
+        price: 900,
         color: null
       }
     ]
@@ -151,6 +172,11 @@ methods: {
 
 <style lang="scss" scoped>
 /* write SCSS here */
+
+.html * {
+    background: rgba(255, 0, 0, .1);
+    box-shadow: 0 0 0 1px red;
+}
 
 :root {
   --color--primary: hsl(0, 0%, 100%);
@@ -314,7 +340,6 @@ body {
     padding: 1rem;
     color: var(--color--primary);
     &-span {
-      position: absolute;
       &-enter,
       &-leave-to {
         transform: translateY(1em);
@@ -380,10 +405,15 @@ body {
   position: relative;
   display: grid;
   padding: 1rem;
+
+  .infobox {
+    height: 25rem;
+  }
+
   &__nav {
     position: absolute;
-    bottom: 2rem;
-    left: -6rem;
+    bottom: 3.5rem;
+    right: 3rem;
     transform: translateY(0);
     &-enter,
     &-leave-to {
@@ -451,7 +481,7 @@ body {
   &__button {
     font-weight: 900;
     font-size: 2rem;
-    width: 10rem;
+    width: 8rem;
     height: 2rem;
     margin: 0;
     cursor: pointer;
@@ -481,7 +511,6 @@ body {
   grid-gap: 1rem;
   align-items: center;
   justify-content: end;
-  width: 10rem;
   transform: translateY(0);
   &-enter,
   &-leave-to {

@@ -45,8 +45,8 @@ export default {
 }
 
 .logo {
-  margin: 1rem auto;
   display:block;
+  width: 2rem;
 }
 
 .menu {
