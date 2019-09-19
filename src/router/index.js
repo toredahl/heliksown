@@ -4,6 +4,7 @@ import HelloWorld from '@/components/HelloWorld'
 import HeliksMap from '@/components/HeliksMap'
 import PlantCollection from '@/components/PlantCollection'
 import SlideGallery from '@/components/SlideGallery'
+
 Vue.use(Router)
 
 export default new Router({

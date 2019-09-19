@@ -1,20 +1,7 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <h2> THIS IS HELIKS ON A ROLL </h2>
-    <div class="center-fold">
-    ------------ o||o ------------ <br>
-                  /\ <br>
-                |||||| <br>
-                ~~~~~~ <br>
-    </div>
-
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-      With Bootstrap!
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
+    <button type="button" name="button" @click="hitch">HIT ME</button>
 
 
     <h2>Essential Links:::</h2>
@@ -106,8 +93,16 @@ export default {
     return {
       msg: 'Welcome to Your Vue.js App'
     }
+  },
+  methods: {
+      hitch: function () {
+        console.log("yeah yaeh");
+        alert("mongo amorto");
+      }
+    }
   }
-}
+
+
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
