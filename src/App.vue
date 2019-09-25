@@ -1,7 +1,7 @@
 <template>
   <div class="container-grid">
-    <header>A Responsive Three Column Grid</header>
-    <nav class="middle">
+    <header class="hide">A Responsive Twelve Column Grid</header>
+    <nav>
       <ul>
         <li><router-link to="/heliksmap">  HeliksMap</router-link></li>
         <li><router-link to="/helloworld"> HelloWorld</router-link></li>
@@ -12,8 +12,8 @@
     <div class="wrapper">
 
       <div class="left">
+        <h3>advice</h3>
         <div class="thin-box"> {{advice}} </div>
-        <!-- <button type="button" name="button" @click="getAdvice">ADVICE ME</button> -->
       </div>
 
       <div class="middle">
@@ -21,12 +21,15 @@
       </div>
 
       <div class="right">
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nulla esse totam odio deserunt, distinctio, repellat cumque ex sequi.
-        Dolor non, magnam nobis quae quibusdam facere cum labore dignissimos vero ab!
-        div>*2>lorem*3
+        <h3>{{category}}</h3>
+        <div class="question-box"> {{question}} </div>
+        <br>
+        <div class="answer-box" v-if="showQuestion">
+          {{answer}}
+        </div>
       </div>
 
-      <div class="full">
+      <div class="full hide">
         Note: the html * style is to be able to see where each container starts and ends.
       </div>
 
@@ -43,8 +46,15 @@ export default {
   name: 'App',
   data () {
     return {
-      advice: 'ADVICE',
-      endpoint: 'https://api.adviceslip.com/advice'
+      advice: 'Advice',
+      endpoint: 'https://api.adviceslip.com/advice',
+      question: 'This is the question',
+      category: 'Category',
+      answer: 'The answer will follow',
+      questions: [],
+      showQuestion: true,
+      counter: 0,
+      q_endpoint: '/api/v1/questions'
     }
   },
   methods: {
@@ -60,10 +70,47 @@ export default {
     },
     initAdvicer: function() {
       setTimeout(function(){ this.getAdvice() }, 3000);
+    },
+    getQuestion: function() {
+      axios.get(this.q_endpoint)
+        .then(response => {
+          this.questions = response.data.qcollection;
+        })
+        .catch(error => {
+            console.log('-----error-------');
+            console.log(error);
+        })
+    },
+    setAnswer: function(){
+      this.answer = "currentAnswer";
+    },
+    setQuestion: function(){
+      var self = this;
+      this.question = this.questions[this.counter].question;
+      this.category = this.questions[this.counter].category.title;
+      this.answer = "Answer will follow..."; //
+      var currentAnswer = this.questions[this.counter].answer;
+      setTimeout(function(){
+        self.showQuestion = true;
+        self.answer = currentAnswer.toUpperCase();
+      }, 8000);
+      this.counter++;
+      if(this.counter>=this.questions.length){
+        this.counter = 0;
+      }
     }
   },
   mounted: function() {
     this.getAdvice();
+    this.getQuestion();
+  },
+  watch: {
+    questions: function() {
+      this.setQuestion();
+      setInterval(() => {
+        this.setQuestion();
+      }, 16000);
+    }
   },
   created: function() {
     // need to use arrow function for setInterval to work...
@@ -74,44 +121,45 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
+  $menu-blue: #00008b;
+  $menu-border: #fff;
 
-body {
-  font-family: 'Quicksand', sans-serif;
-  font-weight: 400;
-}
+  body {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 400;
+  }
 
-#app {
-  /*font-family: 'Avenir', Helvetica, Arial, sans-serif;*/
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-  margin-top: 20px;
-}
-.thin-box {
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  font-weight: 300;
-}
+  #app {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #2c3e50;
+    margin-top: 20px;
+  }
+  .thin-box, .question-box, .answer-box {
+    border: 1px solid #ccc;
+    color: #444;
+    padding: 0.5rem;
+    font-weight: 300;
+    box-shadow: 10px 10px 5px -8px rgba(0,0,0,0.75);
+  }
+  .hoverama {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+  }
 
-.hoverama {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-}
+  .answer-box {
+    font-style: italic;
+  }
 
-body {
-  font-family: 'Quicksand', sans-serif;
-  font-weight: 400;
-}
+  h1 {
+    padding: 0.75rem;
+  }
 
-h1 {
-  padding: 0.75rem;
-}
-
-body .hide {
-  display: none;
-}
+  body .hide {
+    display: none;
+  }
 
 .container-grid {
   max-width: 1880px;
@@ -119,77 +167,54 @@ body .hide {
 }
 
 .html * {
-    background: rgba(255, 0, 0, .1);
-    box-shadow: 0 0 0 1px red;
-}
-
-.main-head {
-  grid-area: header;
-}
-.content {
-  grid-area: content;
-}
-.main-nav {
-  grid-area: nav;
-}
-.side {
-  grid-area: sidebar;
-}
-.ad {
-  grid-area: ad;
-}
-.main-footer {
-  grid-area: footer;
+  background: rgba(255, 0, 0, .1);
+  box-shadow: 0 0 0 1px red;
 }
 
 .wrapper {
   display: grid;
   grid-gap: 20px;
-  grid-template-areas:
-    "header"
-    "nav"
-    "content"
-    "sidebar"
-    "ad"
-    "footer";
    height: 100vh;
 }
 
-nav ul li {
-      margin-right: 2rem;
-       padding: 0.5rem;
+nav {
+  display: grid;
+  grid-template-columns: repeat(12, [col-start] 1fr);
+  grid-gap: 10px;
+  ul {
+    list-style-type: none;
+    grid-column: col-start 3;
+    li {
+      background: $menu-blue;
+      border-radius: 18px;
+      padding: 0.5rem 1rem;
+      margin: 1.5rem 0.75rem;
+      border: 1px solid $menu-border;
+      &:hover {
+        background: white;
+        border: 1px solid $menu-blue;
+        a {
+          color: $menu-blue;
+          text-decoration: none;
+        }
+      }
+      a {
+        color: white;
+      }
+    }
+  }
 }
 
 @media (min-width: 500px) {
 
   .wrapper {
     grid-template-columns: 1fr 3fr;
-    grid-template-areas:
-      "header  header"
-      "nav     nav"
-      "sidebar content"
-      "ad      footer";
   }
 
   nav ul {
     display: flex;
     justify-content: space-between;
   }
-}
-
-@media (min-width: 700px) {
-  .wrapper {
-    grid-template-columns: 1fr 4fr 1fr;
-    grid-template-areas:
-      "header header  header"
-      "nav    content sidebar"
-      "nav    content ad"
-      "footer footer  footer"
-   }
-   nav ul {
-     flex-direction: row;
-       grid-column: col-start 3 / span 8;
-   }
 }
 
 .wrapper {
