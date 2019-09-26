@@ -154,7 +154,7 @@ export default {
   }
 
   h1 {
-    padding: 0.75rem;
+    padding: 0;
   }
 
   body .hide {
@@ -270,6 +270,18 @@ nav {
 @media (max-width: 680px) {
   body{
     font-size: 80%;
+  }
+  nav {
+    ul {
+      grid-column: col-start 1;
+      padding-left: 1rem;
+      li{
+        padding: 0.25rem .5rem;
+        border: 1px solid #fff;
+        text-align: center;
+        margin: 0.5rem 0;
+      }
+    }
   }
 }
 

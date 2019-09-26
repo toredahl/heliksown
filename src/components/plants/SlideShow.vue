@@ -89,7 +89,7 @@ export default {
       var slide = this.slideList[this.currentSlideIndex];
       slide = slide[1];
       html += '<h2>' + slide.navn + '</h2>';
-      html += '<i>' + slide.latinsknavn + '</i>';
+      html += '<i>' + slide.latinsknavn  |  slide.kultivar + '</i>';
       html += '<span class="order">' + slide.orden + '</span>';
       html += '<dl>';
       html += '<dt>Beskrivelse: </dt><dd>' + slide.beskrivelse + '</dd>';

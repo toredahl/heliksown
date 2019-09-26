@@ -8,26 +8,26 @@ var axios = require('axios');
 var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
 var plants = 'http://gsx2json.com/api?id=1rYoxp-qLJDw62Uw1C53cUjr0qxr8-_KUu82oWAgmVr4&sheet=1'
 var jservice = 'http://jservice.io/api/clues?value=1000&offset='
-//https://docs.google.com/spreadsheets/d/e/2PACX-1vRSrCO7HMGNuot2J78xPMTrfOQWCSW-ZQh4lwGmCaNTbIZ1ymQp-IwS9fCtSrU9AsMvC-eEir0YSt9i/pubhtml
 
+// besøkte oslogater
+var visitedStreets = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
+//https://docs.google.com/spreadsheets/d/e/2PACX-1vRSrCO7HMGNuot2J78xPMTrfOQWCSW-ZQh4lwGmCaNTbIZ1ymQp-IwS9fCtSrU9AsMvC-eEir0YSt9i/pubhtml
+var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
 var json_plants;
-var d = new Date();
-var rnd = Math.floor(Math.random()*1000);
-var offset =  d.getDate()*100;
 var limit = 10;
 let qcollection = [];
 var qlinks = [];
 var jquestions;
 var q, p;
+var streets = [];
 
-var tot;
-for (i=0;i<limit;i++){
-  tot = rnd + offset + i;
-  jquestions = jservice + tot.toString();
-  qlinks.push(jquestions);
+const printNow = () => {
+  var d = Date();
+  a = d.toString();
+  return a
 }
 
-const getQuestions = (link) => {
+const getDataAxios = (link) => {
   try {
     return axios.get(link)
   } catch (error) {
@@ -35,10 +35,24 @@ const getQuestions = (link) => {
   }
 }
 
-const pollQuestionApi = async () => {
+const randomQuestionLinks = () => {
+  var d = new Date();
+  var rnd = Math.floor(Math.random()*1000);
+  var offset =  d.getDate()*100;
+  var tot;
+  qlinks = [];
+  for (i=0;i<limit;i++){
+    tot = rnd + offset + i;
+    jquestions = jservice + tot.toString();
+    qlinks.push(jquestions);
+  }
+}
 
+const pollQuestionApi = async () => {
+  randomQuestionLinks()
+  qcollection = [];
   for(l in qlinks){
-    var questions = getQuestions(qlinks[l])
+    var questions = getDataAxios(qlinks[l])
       .then(response => {
         if (response.data) {
             var arr = response.data;
@@ -49,27 +63,55 @@ const pollQuestionApi = async () => {
       })
       .catch(error => {
         console.log(error)
-      })
-    }
-}
-
-pollQuestionApi()
-
-const getBreeds = () => {
-  try {
-    return axios.get(plants)
-  } catch (error) {
-    console.error(error)
+    })
   }
 }
 
+const updateQuestions = () => {
+  pollQuestionApi()
+  app.get('/api/v1/questions', (req, res) => {
+    res.status(200).send({
+      success: 'true',
+      message: 'Spørsmål hentet - SUKSESS ',
+      qcollection:  qcollection
+    })
+  });
+}
+
+// const pollQuestionApi = async () => {
+//   randomQuestionLinks()
+//   qcollection = [];
+//   for(l in qlinks){
+//     var questions = getDataAxios(qlinks[l])
+//       .then(response => {
+//         if (response.data) {
+//             var arr = response.data;
+//             arr.forEach(function(element) {
+//                 qcollection.push(element);
+//             });
+//         }
+//       })
+//       .catch(error => {
+//         console.log(error)
+//     })
+//   }
+// }
+
+// const updateQuestions = () => {
+//   pollQuestionApi()
+//   app.get('/api/v1/questions', (req, res) => {
+//     res.status(200).send({
+//       success: 'true',
+//       message: 'Spørsmål hentet - SUKSESS ',
+//       qcollection:  qcollection
+//     })
+//   });
+// }
+
 const countBreeds = async () => {
-  const breeds = getBreeds()
+  const breeds = getDataAxios(plants)
     .then(response => {
       if (response.data) {
-        console.log(
-          "Hentet async data"
-        )
         json_plants = Object.entries(response.data.rows);
       }
     })
@@ -89,22 +131,42 @@ const updatePlants = () => {
   });
 }
 
-// first initiate plant retrieval...
-console.log("updating plants...");
-updatePlants()
-// then set up hourly poll
-setTimeout(function(){
-  console.log("attempting hourly update...");
-  updatePlants()
-}, 3600000);
 
-app.get('/api/v1/questions', (req, res) => {
-  res.status(200).send({
-    success: 'true',
-    message: 'Spørsmål hentet - SUKSESS ',
-    qcollection:  qcollection
-  })
-});
+const countStreets = async () => {
+  const breeds = getDataAxios(visitedStreets)
+    .then(response => {
+      if (response.data) {
+        streets = Object.entries(response.data.rows);
+      }
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
+
+const updateStreets = () => {
+  countStreets()
+  app.get('/api/v1/oslogater', (req, res) => {
+    res.status(200).send({
+      success: 'true',
+      message: 'Gater hentet - SUKSESS ',
+      gater:  streets
+    })
+  });
+}
+
+
+
+// first initiate...
+updateQuestions()
+updatePlants()
+updateStreets()
+// then set up hourly poll
+setInterval(function(){
+  console.log("hourly update..." + printNow());
+  updatePlants();
+  updateQuestions();
+}, 3600000);
 
 app.use(serveStatic(__dirname + "/dist"));
 var port = process.env.PORT || 5000;
