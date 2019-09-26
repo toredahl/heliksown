@@ -21,9 +21,9 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-//var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
+/* //var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
 //var mapboxUrl = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=norges_grunnkart_graatone&zoom={z}&x={x}&y={y}';
-//var grayscale = L.tileLayer(mapboxUrl, {attribution: mapboxAttribution});
+//var grayscale = L.tileLayer(mapboxUrl, {attribution: mapboxAttribution}); */
 
 
 
