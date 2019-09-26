@@ -267,4 +267,10 @@ nav {
   }
 }
 
+@media (max-width: 680px) {
+  body{
+    font-size: 80%;
+  }
+}
+
 </style>

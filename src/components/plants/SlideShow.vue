@@ -3,7 +3,9 @@
     <h1>{{title}}</h1>
     <!-- container displaying the current slide => the data populated from outside -->
     <div id="cardContainer" class="cardHolder">
-      <img :src="currentSlide" alt="">
+      <div class="main-image">
+        <img :src="currentSlide" alt="">
+      </div>
       <div class="card" v-html="currentInfoCard"></div>
     </div>
     <!-- end current slide container -->
@@ -11,11 +13,11 @@
     <!-- thumbnails for all the slides -->
     <div class="auto medium-m">
       <!-- <ul id="thumbs" v-html="thumbsGrid"> -->
-      <ul id="thumbs" v-if="showThumbs">
-        <li v-for="(slide, index) in this.slideList" class="thumbs" @click="displayMe(index)">
+      <div id="thumbs" v-if="showThumbs">
+        <span v-for="(slide, index) in this.slideList" class="thumbs" @click="displayMe(index)">
           <img :src="slide[1].bildeurl" >
-        </li>
-      </ul>
+        </span>
+      </div>
     </div>
     <!-- end thumbnails -->
 
@@ -102,18 +104,40 @@ export default {
 </script>
 
 <style lang="scss">
+  #cardContainer {
+    height: 72vh;
+  }
+
+  #thumbs {
+    overflow: scroll;
+  }
+
+  .main-image {
+    height: 44vh;
+    align-items: center;
+    display: flex;
+    img {
+      max-width: 600px;
+      // height: 100%;
+      // display: block;
+      // margin: 0 auto;
+    }
+  }
 
   .thumbs {
       float:left;
       display:inline-block;
-      list-style-type:none;
-      margin-right: 1rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
       border: 2px solid #ccc;
       padding: 0.25rem;
+      height: 72px;
+      width: 72px;
+      &:last-of-type {
+        margin-right: 0;
+      }
       img {
-        max-width: 72px;
-        max-height: 72px;
-        width: 80%;
+        max-height: 60px;
         margin: 0 auto;
         display: block;
       }
@@ -152,7 +176,8 @@ export default {
   .cardHolder {
     img {
       width: auto;
-      max-width: 100%;
+      max-width: 500px;
+      max-height: 40vh;
       margin: 0 auto;
       display: block;
     }
@@ -175,4 +200,23 @@ export default {
   .medium-m {
     margin: 1rem 0;
   }
+
+@media (max-width: 680px) {
+
+  #cardContainer {
+    height: 60vh;
+  }
+
+  .main-image {
+    height: 30vh;
+  }
+
+  .cardHolder {
+      img {
+        max-width: 260px;
+        max-height: 25vh;
+    }
+  }
+}
+
 </style>
