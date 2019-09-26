@@ -12,9 +12,8 @@
 
     <!-- thumbnails for all the slides -->
     <div class="auto medium-m">
-      <!-- <ul id="thumbs" v-html="thumbsGrid"> -->
       <div id="thumbs" v-if="showThumbs">
-        <span v-for="(slide, index) in this.slideList" class="thumbs" @click="displayMe(index)">
+        <span v-for="(slide, index) in this.slideList" class="thumbs" @click="displayMe(index)" :title="slide[1].navn">
           <img :src="slide[1].bildeurl" >
         </span>
       </div>
@@ -204,7 +203,7 @@ export default {
 @media (max-width: 680px) {
 
   #cardContainer {
-    height: 60vh;
+    height: auto;
   }
 
   .main-image {
