@@ -6,7 +6,7 @@ import router from './router'
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Vibrant from 'node-vibrant';
-
+import 'leaflet/dist/leaflet.css';
 Vue.config.productionTip = false
 
 /* eslint-disable no-new */

@@ -5,21 +5,22 @@ var serveStatic = require('serve-static');
 app = express();
 
 var axios = require('axios');
-var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
+var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=4&columns=false';
 var plants = 'http://gsx2json.com/api?id=1rYoxp-qLJDw62Uw1C53cUjr0qxr8-_KUu82oWAgmVr4&sheet=1'
 var jservice = 'http://jservice.io/api/clues?value=1000&offset='
 
 // besøkte oslogater
-var visitedStreets = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
+var visitedStreets = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=1&columns=false';
 //https://docs.google.com/spreadsheets/d/e/2PACX-1vRSrCO7HMGNuot2J78xPMTrfOQWCSW-ZQh4lwGmCaNTbIZ1ymQp-IwS9fCtSrU9AsMvC-eEir0YSt9i/pubhtml
-var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
+
 var json_plants;
 var limit = 10;
 let qcollection = [];
 var qlinks = [];
 var jquestions;
 var q, p;
-var streets = [];
+var streets = [],
+    blueplaques = [];
 
 const printNow = () => {
   var d = Date();
@@ -78,36 +79,6 @@ const updateQuestions = () => {
   });
 }
 
-// const pollQuestionApi = async () => {
-//   randomQuestionLinks()
-//   qcollection = [];
-//   for(l in qlinks){
-//     var questions = getDataAxios(qlinks[l])
-//       .then(response => {
-//         if (response.data) {
-//             var arr = response.data;
-//             arr.forEach(function(element) {
-//                 qcollection.push(element);
-//             });
-//         }
-//       })
-//       .catch(error => {
-//         console.log(error)
-//     })
-//   }
-// }
-
-// const updateQuestions = () => {
-//   pollQuestionApi()
-//   app.get('/api/v1/questions', (req, res) => {
-//     res.status(200).send({
-//       success: 'true',
-//       message: 'Spørsmål hentet - SUKSESS ',
-//       qcollection:  qcollection
-//     })
-//   });
-// }
-
 const countBreeds = async () => {
   const breeds = getDataAxios(plants)
     .then(response => {
@@ -136,7 +107,9 @@ const countStreets = async () => {
   const breeds = getDataAxios(visitedStreets)
     .then(response => {
       if (response.data) {
-        streets = Object.entries(response.data.rows);
+        //streets = Object.entries(response.data.rows);
+        var gater = response.data.rows;
+        streets = gater;
       }
     })
     .catch(error => {
@@ -144,18 +117,48 @@ const countStreets = async () => {
     })
 }
 
+const getBluePlaques = async () => {
+  const plaques = getDataAxios(bluePlaqueUrl)
+    .then(response => {
+      if (response.data) {
+        //blueplaques = Object.entries(response.data.rows);
+        blueplaques = response.data.rows;
+      }
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
+
+const getStreetData = async (url, list) => {
+  // attempting refactoring but fails...
+  const dataobject = getDataAxios(url)
+    .then(response => {
+      if (response.data) {
+        return response.data.rows;
+      }
+    })
+    .catch(error => {
+      console.log(error)
+    })
+
+    let result = await dataobject;
+    return result
+}
+
 const updateStreets = () => {
-  countStreets()
+  countStreets();
+  getBluePlaques();
+
   app.get('/api/v1/oslogater', (req, res) => {
     res.status(200).send({
       success: 'true',
-      message: 'Gater hentet - SUKSESS ',
-      gater:  streets
+      message: 'Bydata hentet - SUKSESS ',
+      gater:  streets,
+      blaaskilt: blueplaques
     })
   });
 }
-
-
 
 // first initiate...
 updateQuestions()

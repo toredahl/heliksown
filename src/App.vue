@@ -130,6 +130,12 @@ export default {
     font-weight: 400;
   }
 
+  html * {
+    // background: rgba(255, 0, 0, .1);
+    // box-shadow: 0 0 0 1px red;
+  }
+
+
   #app {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -164,11 +170,6 @@ export default {
 .container-grid {
   max-width: 1880px;
   margin: 0 auto;
-}
-
-.html * {
-  background: rgba(255, 0, 0, .1);
-  box-shadow: 0 0 0 1px red;
 }
 
 .wrapper {

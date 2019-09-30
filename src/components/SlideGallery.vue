@@ -1,4 +1,3 @@
-import Vibrant from 'node-vibrant';
 
 <template id="SlideGallery">
   <div class="viewport" id="app">
@@ -74,7 +73,7 @@ import Vibrant from 'node-vibrant';
 <script>
 
 // https://dribbble.com/shots/6566320-Kalli-Hero
-
+import Vibrant from 'node-vibrant';
 export default {
   name: 'SlideGallery',
   data() {
