@@ -107,11 +107,11 @@ export default {
 
   #left, #right {
     position: absolute;
-    bottom: 0;
+    top: 12rem;
   }
 
-  #left {left:-3rem;}
-  #right {right: -3rem;}
+  #left {left:0rem;}
+  #right {right:0rem;}
 
   .main-image {
     height: 40vh;
@@ -155,8 +155,10 @@ export default {
   height: 24vh;
   max-height: 500px;
   overflow: scroll;
+  font-size: 80%;
   h2 {
       text-transform: lowercase;
+      font-size: 24px;
       &::first-letter {
         text-transform: uppercase;
       }
@@ -209,7 +211,6 @@ export default {
   .scrollbar {
     height: 80px;
     overflow: scroll;
-
   }
 
   .medium-m {
@@ -230,6 +231,19 @@ export default {
       img {
         max-width: 260px;
         max-height: 25vh;
+    }
+
+    #left, #right {
+      top: 6rem;
+    }
+  }
+
+  .thumbs {
+    width: 48px;
+    height: 48px;
+    img {
+      max-width: 40px;
+      max-height: 40px;
     }
   }
 }
