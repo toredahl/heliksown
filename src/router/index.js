@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import HelloWorld from '@/components/HelloWorld'
 import HeliksMap from '@/components/HeliksMap'
 import PlantCollection from '@/components/PlantCollection'
+import Sandbox from '@/components/Sandbox'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 
@@ -25,6 +26,11 @@ export default new Router({
       path: '/plantesamling',
       name: 'PlantCollection',
       component: PlantCollection
+    },
+    {
+      path: '/sandbox',
+      name: 'Sandbox',
+      component: Sandbox
     }
   ]
 })

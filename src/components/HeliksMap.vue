@@ -5,11 +5,9 @@
       <div id="map"></div>
     </div>
     <div class="right-side" style="">
-      <div class="button-row">
+      <div id="mapButtons" class="button-row">
         <button id="markers" class="static1 green" @click="handleVisitedStreets()">Besøkte</button>
         <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
-        <!-- <button id="remove" class="static3 orange" @click="removeMarkers()">Fjern</button> -->
-        <!-- <button id="gpx" class="static4 red">GPX</button> -->
       </div>
 
       <div id="coords" class="status">
@@ -330,7 +328,7 @@ export default {
   .visited {
     padding: 1rem;
     border: 3px solid black;
-    background: gold;
+    background-color: #A9A9A9;
     font-size: 9px;
     overflow: scroll;
     height: 400px;
@@ -395,7 +393,6 @@ export default {
     color: red;
     background-color:yellow;
   }
-
 
 
 </style>
