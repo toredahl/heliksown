@@ -4,28 +4,25 @@
     <!-- container displaying the current slide => the data populated from outside -->
     <div id="cardContainer" class="cardHolder">
       <div class="main-image">
-        <img :src="currentSlide" alt="">
+
+        <img :src="currentSlide">
+
       </div>
+      <button id="left" class="btn btn-info" @click="switchSlide(-1)"><</button>
       <div class="card" v-html="currentInfoCard"></div>
+      <button id="right" class="btn btn-info" @click="switchSlide(1)">></button>
     </div>
     <!-- end current slide container -->
 
     <!-- thumbnails for all the slides -->
-    <div class="auto medium-m">
-      <div id="thumbs" v-if="showThumbs">
+    <div id="thumb-container">
+      <div id="thumbs" v-if="showThumbs" class="medium-m scrollbar">
         <span v-for="(slide, index) in this.slideList" class="thumbs" @click="displayMe(index)" :title="slide[1].navn">
           <img :src="slide[1].bildeurl" >
         </span>
       </div>
     </div>
     <!-- end thumbnails -->
-
-    <!-- prev & next buttons -->
-    <div class="clearing buttons">
-      <button id="left" class="btn btn-info" @click="switchSlide(-1)"><</button>
-      <button id="right" class="btn btn-info" @click="switchSlide(1)">></button>
-    </div>
-    <!-- end prev & next buttons -->
 
   </div>
 </template>
@@ -104,28 +101,38 @@ export default {
 
 <style lang="scss">
   #cardContainer {
-    height: 72vh;
+    height: 64vh;
+    position: relative;
   }
 
-  #thumbs {
-    overflow: scroll;
+  #left, #right {
+    position: absolute;
+    bottom: 0;
   }
+
+  #left {left:-3rem;}
+  #right {right: -3rem;}
 
   .main-image {
-    height: 44vh;
+    height: 40vh;
     align-items: center;
     display: flex;
+    padding: 1rem;
     img {
       max-width: 600px;
-      // height: 100%;
-      // display: block;
-      // margin: 0 auto;
+      height: 100%;
     }
   }
 
+  #thumb-container {
+    overflow-x: scroll;
+  }
+  #thumbs {
+    width: 3000%;
+  }
+
   .thumbs {
-      float:left;
-      display:inline-block;
+      float: left;
       margin-right: 0.5rem;
       margin-bottom: 0.5rem;
       border: 2px solid #ccc;
@@ -145,6 +152,9 @@ export default {
   padding: 1rem;
   background: white;
   border: 1px solid #ccc;
+  height: 24vh;
+  max-height: 500px;
+  overflow: scroll;
   h2 {
       text-transform: lowercase;
       &::first-letter {
@@ -175,8 +185,8 @@ export default {
   .cardHolder {
     img {
       width: auto;
-      max-width: 500px;
-      max-height: 40vh;
+      // max-width: 500px;
+      // max-height: 40vh;
       margin: 0 auto;
       display: block;
     }
@@ -194,6 +204,12 @@ export default {
 
   .auto {
     overflow:auto;
+  }
+
+  .scrollbar {
+    height: 80px;
+    overflow: scroll;
+
   }
 
   .medium-m {

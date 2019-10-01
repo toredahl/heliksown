@@ -61,7 +61,6 @@ export default {
   created: function () {
         this.getBluePlaques();
         this.getAllStreets();
-
   },
   mounted() {
       this.initMap();
@@ -85,7 +84,6 @@ export default {
           .then(response => {
             if (response.data) {
               this.blueSigns = response.data.blaaskilt;
-              //console.log(this.blueSigns[0]);
             }
           })
       },
@@ -173,7 +171,7 @@ export default {
       removeMarkers: function(markerlist) {
         var self = this;
         markerlist.forEach(function(value, index ) {
-          console.log(value);
+          //console.log(value);
           self.layerGroup.removeLayer(value);
         });
         markerlist = [];
@@ -221,7 +219,6 @@ export default {
       handleVisitedStreets: function() {
 
           var counter = 0;
-
         self = this;
         if(!self.markersAdded){
           var streets = self.visitedStreets;
@@ -229,6 +226,7 @@ export default {
             counter++;
             var s = self.createQuery(value.adresse);
             var date_visited = value.datobesøkt + value.år;
+            // should add the coordinates first retrival, so no further polls
             self.retrieveStreetCoords(s,value.adresse,date_visited);
           });
 
@@ -237,7 +235,7 @@ export default {
           self.visited = counter;
         }else{
           self.visited = 0;
-          console.log(self.visitedStreets);
+          //console.log(self.visitedStreets);
           self.removeMarkers(self.visitedStreets);
           self.markersAdded = false;
         }
