@@ -6,13 +6,10 @@
         style="cursor: pointer"
         @click="serverSelected"
       >
-        <!-- Server #{{ server.id }}  Core temperature:  {{server.core}}  Status: {{server.status}} -->
         <div class="meter" :class="currentLevel">
           <span :style="corevalue"> {{server.core}}°C </span>
         </div>
     </li>
-
-
 
 </template>
 

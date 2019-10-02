@@ -199,22 +199,23 @@
         servers.forEach(function(element) {
             if(id == element.id){
               let coreValue = self.changeStatus();
-              //element.status = coreValue[0];
-
               element.timelapse = timelapse;
-              //element.core = coreValue[1];
-              element.core += Math.floor(Math.random() * 3);
 
               if(element.core < 25){
                 element.status = 'Normal';
+                element.core += Math.floor(Math.random() * 1);
               }else if (element.core < 35){
                 element.status = 'Serious';
+                element.core += Math.floor(Math.random() * 2);
               }else if (element.core < 50){
                 element.status = 'Awful';
+                element.core += Math.floor(Math.random() * 3);
               }else if (element.core < 70){
                 element.status = 'Terrible';
+                element.core += Math.floor(Math.random() * 4);
               }else if (element.core < 80){
                 element.status = 'Meltdown';
+                element.core += Math.floor(Math.random() * 5);
               }else if (element.core < 100){
                 element.status = 'Critical';
               }
