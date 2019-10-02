@@ -123,7 +123,7 @@
         basic: 'shake ',
         shakelevel: '',
         defcon: '',
-        defconLevel: 'all-well'
+        defconLevel: 'normal'
       }
     },
     components: {
@@ -136,8 +136,7 @@
         setTimeout(function() {
            self.updateServer(id, timelapse);
         }, timeout);
-        var secondtimeout = (Math.floor(Math.random() * 5) + 1) * 1000;
-        console.log("secondtimeout : " + secondtimeout);
+        var secondtimeout = (Math.floor(Math.random() * 7) + 1) * 1000;
         setInterval(function(){
           self.increaseTemperature(id);
         }, secondtimeout);
@@ -164,23 +163,28 @@
         if(this.coreValue < 101){
           this.normal = true;
           this.shakelevel = 'shake-little shake-constant';
-          this.defcon = 'Normal range - no worries'
+          this.defcon = 'Normal range - no worries';
+          this.defconLevel = 'normal';
         }else if(this.coreValue<151){
           this.serious = true;
           this.shakelevel = 'shake-slow shake-constant';
-          this.defcon = 'Serious range - check engines'
+          this.defcon = 'Serious range - check engines';
+          this.defconLevel = 'serious';
         }else if(this.coreValue<181){
           this.awful = true;
           this.shakelevel = 'shake-hard shake-constant';
-          this.defcon = 'Awful range - approaching dangerous terrain'
+          this.defcon = 'Awful range - approaching dangerous terrain';
+          this.defconLevel = 'awful';
         }else if(this.coreValue<221){
           this.terrible = true;
           this.shakelevel = 'shake-crazy shake-constant';
-          this.defcon = 'Terrible range - near critical'
+          this.defcon = 'Terrible range - near critical';
+          this.defconLevel = 'terrible';
         }else if(this.coreValue<251){
           this.critical = true;
           this.shakelevel = 'shake-opacity shake-constant';
-          this.defcon = 'Situation critical - meltdown imminent!'
+          this.defcon = 'Situation critical - meltdown imminent!';
+          this.defconLevel = 'critical';
         }else if(this.coreValue>250){
           this.gameover = true;
         }else{
@@ -195,9 +199,30 @@
         servers.forEach(function(element) {
             if(id == element.id){
               let coreValue = self.changeStatus();
-              element.status = coreValue[0];
+              //element.status = coreValue[0];
+
               element.timelapse = timelapse;
-              element.core = coreValue[1];
+              //element.core = coreValue[1];
+              element.core += Math.floor(Math.random() * 3);
+
+              if(element.core < 25){
+                element.status = 'Normal';
+              }else if (element.core < 35){
+                element.status = 'Serious';
+              }else if (element.core < 50){
+                element.status = 'Awful';
+              }else if (element.core < 70){
+                element.status = 'Terrible';
+              }else if (element.core < 80){
+                element.status = 'Meltdown';
+              }else if (element.core < 100){
+                element.status = 'Critical';
+              }
+
+              if(element.core >= 100){
+                element.core = 100;
+                element.status = 'Critical';
+              }
             }
         });
         self.calculateCore();
@@ -206,10 +231,11 @@
         let servers = this.servers;
         self = this;
         servers.forEach(function(element) {
+            var increase = Math.floor(Math.random() * 3);
             if(id == element.id){
-              element.core += 1;
+              element.core += increase;
               if(element.core >= 101){
-                element.core = 101;
+                element.core = 100;
               }
             }
         });
@@ -227,6 +253,8 @@
       changeStatus() {
         var rnd = Math.floor(Math.random() * 10);
         var singledigit = Math.floor(Math.random() * 10);
+
+
         switch(rnd) {
           case 0:
             return ['Awful', 20+singledigit];
@@ -396,6 +424,38 @@ svg {
 .ball {
   fill: #fc2f70;
   stroke: none;
+}
+
+.normal {
+  color: green;
+}
+
+.awful {
+  color: darkgrey;
+  animation:blinkingText 3.5s infinite;
+}
+
+.serious {
+  color: orange;
+  animation:blinkingText 2.5s infinite;
+}
+
+.terrible {
+  color: crimson;
+  animation:blinkingText 1.5s infinite;
+}
+
+.critical {
+  color: red;
+	animation:blinkingText 0.75s infinite;
+}
+
+@keyframes blinkingText{
+	0%{		color: red;	}
+	49%{	color: transparent;	}
+	50%{	color: transparent;	}
+	99%{	color:transparent;	}
+	100%{	color: red;	}
 }
 
 @keyframes spin {

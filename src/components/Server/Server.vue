@@ -35,6 +35,9 @@
     mounted() {
       this.core = this.server.core;
       this.calculateTemperature();
+      console.log("initiating temperature loss server " + this.server.id);
+      this.server.timelapse = Math.floor(Math.random() * 20) + 5;
+      serverBus.$emit('serverSelected', this.server);
     },
     props:['server'],
     watch: {
@@ -42,20 +45,19 @@
     methods: {
       calculateTemperature(){
         this.corevalue = 'width:' + this.server.core + '%;';
-        if(this.server.core <10){
-            this.currentLevel = 'green shake-basic';
-        }else if (this.server.core <25){
-          this.currentLevel = 'green shake-basic shake-constant';
+        if(this.server.core <25){
+            this.currentLevel = 'green';
         }else if (this.server.core <40){
           this.currentLevel = 'yellow shake-little shake-constant';
         }else if (this.server.core <60){
-          this.currentLevel = 'orange shake-slow shake-constant';
+          this.currentLevel = 'orange shake shake-constant';
+        }else if (this.server.core <70){
+          this.currentLevel = 'pink shake-slow shake-constant';
         }else if (this.server.core <80){
-          this.currentLevel = 'orange shake-hard shake-constant';
+          this.currentLevel = 'violet shake-hard shake-constant';
         }else {
           this.currentLevel = 'red shake-opacity shake-constant';
         }
-
       },
       serverSelected: function() {
         this.server.timelapse = Math.floor(Math.random() * 15) + 5;
@@ -79,39 +81,5 @@
   .meter span {
     text-align: center;
   }
-
-/* .status-Normal {
-  background: green;
-}
-
-.status-Critical {
-  background: #F64C72;
-  color: darkblue;
-}
-
-.status-Unknown {
-  background: #FBEEC1;
-}
-
-.status-Awful {
-  background: #659DBD;
-  color: green;
-}
-
-.status-Terrible {
-  background: #DAAD86;
-  color: black;
-}
-
-.status-Meltdown {
-  background: #553D67;
-  color: red;
-}
-
-.status-Explosive {
-  background: black;
-  color: silver;
-} */
-
 
 </style>
