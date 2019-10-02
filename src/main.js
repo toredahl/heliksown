@@ -7,6 +7,7 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Vibrant from 'node-vibrant';
 import 'leaflet/dist/leaflet.css';
+import './assets/shakes.css';
 Vue.config.productionTip = false
 
 export const serverBus = new Vue();

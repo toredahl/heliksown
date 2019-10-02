@@ -3,7 +3,6 @@
     <h1>{{ msg }}</h1>
     <button type="button" name="button" @click="hitch">HIT ME</button>
 
-
     <h2>Essential Links:::</h2>
     <ul>
       <li>

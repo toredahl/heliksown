@@ -32,7 +32,6 @@
 
 import L from 'leaflet';
 
-
 var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
 var mapboxUrl = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=norges_grunnkart_graatone&zoom={z}&x={x}&y={y}';
 var grayscale = L.tileLayer(mapboxUrl, {attribution: mapboxAttribution});

@@ -122,6 +122,8 @@ export default {
 }
 </script>
 
+<style src="./assets/shakes.css"></style>
+<style src="./assets/meters.css"></style>
 <style lang="scss">
   $menu-blue: #00008b;
   $menu-border: #fff;
