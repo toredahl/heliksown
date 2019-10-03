@@ -6,21 +6,22 @@
     </div>
     <div class="right-side" style="">
       <div id="mapButtons" class="button-row">
-        <button id="markers" class="static1 green" @click="handleVisitedStreets()">Besøkte</button>
+        <!-- <button id="markers" class="static1 green" @click="handleVisitedStreets()">Besøkte</button> -->
+        <button id="mark" class="static1 orange" @click="handleStreetMarkers()">Besøkte</button>
+
         <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
       </div>
 
       <div id="coords" class="status">
-
       </div>
       <div id="status" class="status">
         {{visited}}
       </div>
       <div class="visited">
         <ul id="been-there">
-          <li v-for="item in visitedAdresses" :key="item.id">
+          <!-- <li v-for="item in visitedAdresses" :key="item.id">
             {{ item }}
-          </li>
+          </li> -->
         </ul>
       </div>
     </div>
@@ -45,14 +46,20 @@ export default {
         layerGroup: null,
         allStreets: [],
         visitedStreets: [],
-        streetsVisited: [],
         blueMarkers: [],
+        streetMarkers: [],
+        visitedStreetList: [],
         visitedStreetsLayer: null,
         markersAdded: false,
         visitedObj: {},
         bluePlaquesAdded: false,
         visited: 0,
-        showlist: false
+        magicNumber: 0,
+        comparison: 0,
+        showlist: false,
+        streetsLookedUp: false,
+        streetsNotFound: [],
+        streetsParsed: false
     }
   },
   created: function () {
@@ -63,8 +70,24 @@ export default {
       this.initMap();
   },
   watch: {
+    // when we have all the streets, we filter out those visited and keep them
     allStreets: function() {
+      console.log("allStreets changed");
       this.filterVisitedStreets();
+    },
+    visitedStreets: function() {
+      // we have the updated list, now need to query the street names for coordinates
+
+      if(!this.streetsParsed ){
+        var count = 0;
+        var streets = this.visitedStreets;
+        for (let value of streets) {
+          var s = this.createQuery(value.adresse);
+          var date_visited = value.datobesøkt +'.' + + value.år;
+          this.retrieveStreetLatLon(s,value.adresse,date_visited);
+        }
+      }
+      this.streetsParsed = true;
     }
   },
   methods:  {
@@ -100,6 +123,8 @@ export default {
               self.visitedStreets.push(value);
             }
           });
+          console.log("number of streets visited: " + self.visitedStreets.length);
+          this.magicNumber = self.visitedStreets.length;
       },
       customIcon: function() {
          this.myIcon = L.icon({
@@ -149,7 +174,7 @@ export default {
         if(type == 'bluemarker'){
           this.blueMarkers.push(theMarker._leaflet_id);
         }else {
-          this.visitedStreets.push(theMarker._leaflet_id);
+            this.streetMarkers.push(theMarker._leaflet_id);
         }
 
       },
@@ -166,13 +191,57 @@ export default {
         }
       },
       removeMarkers: function(markerlist) {
+        console.log("callign removal");
         var self = this;
         markerlist.forEach(function(value, index ) {
-          //console.log(value);
           self.layerGroup.removeLayer(value);
         });
         markerlist = [];
         return markerlist;
+      },
+      handleStreetMarkers: function() {
+        var self = this;
+        if(self.markersAdded){
+          self.streetMarkers = self.removeMarkers(self.streetMarkers);
+          self.markersAdded = false;
+        }else {
+          this.visitedStreetList.forEach(function(value, index ) {
+          var latlng = [value.lat, value.lon];
+          var title = value.navn + ", " + value.adresse;
+          self.placeMarker(latlng, title,value.color,'normal',false, 'streetmarker');
+          self.markersAdded = true;
+        });
+      }
+    },
+      handleBluePlaques: function() {
+        var self = this;
+        if(self.bluePlaquesAdded){
+          self.blueMarkers = self.removeMarkers(self.blueMarkers);
+          self.bluePlaquesAdded = false;
+          }else {
+            this.blueSigns.forEach(function(value, index ) {
+              var latlng = [value.lat, value.lon];
+              var title = value.navn + ", " + value.adresse;
+              self.placeMarker(latlng, title,'blue','normal',false, 'bluemarker');
+              self.bluePlaquesAdded = true;
+          });
+        }
+      },
+
+      plotMarkers: function(){
+        var addresses = this.visitedStreetList;
+        for (let value of addresses) {
+          var latlng = [value.lat, value.lon];
+          this.placeMarker(latlng, value.adressenavn + " - " + value.dato, value.color, 'normal', true);
+        }
+
+        if(!this.markersAdded){
+          this.markersAdded = true;
+        }else{
+          this.markersAdded = false;
+          //self.removeMarkers(self.visitedStreets);
+        }
+
       },
       plotData: function(d,streetname,date_visited){
 
@@ -204,56 +273,78 @@ export default {
         return query + filtrer;
       },
       retrieveStreetCoords: function(q,streetname,date_visited){
-
         this.axios.get(q)
           .then(response => {
             if (response.data) {
               var s = this.plotData(response.data,streetname,date_visited);
               this.visitedObj[streetname] = s;
             }
-          })
-      },
-      handleVisitedStreets: function() {
-
-          var counter = 0;
-        self = this;
-        if(!self.markersAdded){
-          var streets = self.visitedStreets;
-          streets.forEach(function(value, index ) {
-            counter++;
-            var s = self.createQuery(value.adresse);
-            var date_visited = value.datobesøkt + value.år;
-            // should add the coordinates first retrival, so no further polls
-            self.retrieveStreetCoords(s,value.adresse,date_visited);
           });
+      },
+      retrieveStreetLatLon: function(q,streetname,date_visited){
+        var mingate = streetname.replace('’', '\'');
+        var full_date = date_visited.replace(' ', '');
 
-          self.populateVisitedList();
-          self.markersAdded = true;
-          self.visited = counter;
-        }else{
-          self.visited = 0;
-          //console.log(self.visitedStreets);
-          self.removeMarkers(self.visitedStreets);
-          self.markersAdded = false;
-        }
-      },
-      populateVisitedList: function() {
-        console.log("finished markers");
-      },
-      handleBluePlaques: function() {
-        var self = this;
-        if(self.bluePlaquesAdded){
-          self.blueMarkers = self.removeMarkers(self.blueMarkers);
-          self.bluePlaquesAdded = false;
-        }else {
-          this.blueSigns.forEach(function(value, index ) {
-            var latlng = [value.lat, value.lon];
-            var title = value.navn + ", " + value.adresse;
-            self.placeMarker(latlng, title,'blue','normal',false, 'bluemarker');
-            self.bluePlaquesAdded = true;
+        this.axios.get(q)
+          .then(response => {
+            if (response.data) {
+              //var s = this.plotData(response.data,streetname,date_visited);
+              var streets = JSON.parse(JSON.stringify(response.data,0,2));
+
+              var i = 0;
+              var found = false;
+              for (let value of streets.adresser) {
+                i++;
+                if(value.adressenavn.toLowerCase() == mingate.toLowerCase()){
+                  var obj = {};
+                  obj['adresse'] = value.adressenavn;
+                  obj['dato'] = full_date;
+                  obj['lat'] = value.representasjonspunkt.lat;
+                  obj['lon'] = value.representasjonspunkt.lon;
+                  obj['postnummer'] = value.postnummer;
+                  obj['color'] = this.getCityDivisionColor(value.postnummer.substr(0,2));
+                  this.visitedStreetList.push(obj);
+                  found = true;
+                  return
+                }
+              }
+              if(!found){
+                console.log("unable to find match for: " + mingate);
+                this.streetsNotFound.push(mingate);
+              }
+            }
         });
       }
-    }
+
+      // handleVisitedStreets: function() {
+      //
+      //   var counter = 0;
+      //   self = this;
+      //
+      //   if(!self.markersAdded){
+      //     var streets = self.visitedStreets;
+      //
+      //     for (let value of addresses) {
+      //       counter++;
+      //       var s = self.createQuery(value.adresse);
+      //       var date_visited = value.datobesøkt + value.år;
+      //       var a = self.retrieveStreetCoords(s,value.adresse,date_visited);
+      //
+      //     }
+      //
+      //     self.populateVisitedList();
+      //     self.markersAdded = true;
+      //     self.visited = counter;
+      //   }else{
+      //     self.visited = 0;
+      //     self.removeMarkers(self.visitedStreets);
+      //     self.markersAdded = false;
+      //   }
+      // },
+      // populateVisitedList: function() {
+      //   console.log("finished markers");
+      // },
+
   }
 }
 
@@ -269,8 +360,6 @@ export default {
   }
 
   #map {
-    /* width: 900px;
-    height: 800px; */
     height: 67.5vh;
   }
 

@@ -51,19 +51,20 @@
 			position: relative;
 			overflow: hidden;
 		}
-		.meter > span:after, .animate > span > span {
+		.meter > span:after, .animate > span > span, #master .meter > span:after, .animate > span > span {
 			content: "";
 			position: absolute;
 			top: 0; left: 0; bottom: 0; right: 0;
 			background-image:
-			   -webkit-gradient(linear, 0 0, 100% 100%,
+			   -webkit-linear-gradient(linear, 0 0, 100% 100%,
 			      color-stop(.25, rgba(255, 255, 255, .2)),
 			      color-stop(.25, transparent), color-stop(.5, transparent),
 			      color-stop(.5, rgba(255, 255, 255, .2)),
 			      color-stop(.75, rgba(255, 255, 255, .2)),
 			      color-stop(.75, transparent), to(transparent)
 			   );
-			background-image:
+
+			/* background-image:
 				-moz-linear-gradient(
 				  -45deg,
 			      rgba(255, 255, 255, .2) 25%,
@@ -73,7 +74,7 @@
 			      rgba(255, 255, 255, .2) 75%,
 			      transparent 75%,
 			      transparent
-			   );
+			   ); */
 			z-index: 1;
 			-webkit-background-size: 50px 50px;
 			-moz-background-size: 50px 50px;

@@ -1,7 +1,7 @@
 <template>
     <div class="col-xs-12 col-sm-8">
       <div v-if="!gameover">
-        <ul class="list-group">
+        <ul id="master" class="list-group">
             <app-server
                 v-for="server in servers"
                 :server="server"></app-server>
