@@ -2,26 +2,30 @@
 
   <div id="HeliksMap">
     <div class="left-side">
-      <div id="map"></div>
+      <div id="map" v-on:click="clickMap($event)"></div>
     </div>
     <div class="right-side" style="">
       <div id="mapButtons" class="button-row">
-        <!-- <button id="markers" class="static1 green" @click="handleVisitedStreets()">Besøkte</button> -->
-        <button id="mark" class="static1 orange" @click="handleStreetMarkers()">Besøkte</button>
-
+        <button id="mark" class="static1 green" @click="handleStreetMarkers()">Besøkte</button>
         <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
       </div>
-
+      <h3>Klikk på kart for å se koordinater</h3>
       <div id="coords" class="status">
+        Siste koordinat: {{coordinates}}
+        <hr>
+        Rute: {{waypoints}}
       </div>
+      <button class="regular" @click="addPoint()" v-if="mapclicked">Legg til punkt</button>
+      <button class="regular" @click="plotRoute()" v-if="routepossible">Vis rute</button>
+      <button class="regular"  @click="clearRoute()" v-if="routepossible">Fjern</button>
       <div id="status" class="status">
         {{visited}}
       </div>
       <div class="visited">
         <ul id="been-there">
-          <!-- <li v-for="item in visitedAdresses" :key="item.id">
-            {{ item }}
-          </li> -->
+          <li v-for="item in visitedStreetList" :key="item.id">
+            {{ item.adresse }} - {{ item.dato }}   <span class="dot" :style="{ background: item.color }"></span>
+          </li>
         </ul>
       </div>
     </div>
@@ -32,10 +36,18 @@
 <script>
 
 import L from 'leaflet';
+import 'leaflet-routing-machine';
+//import 'lrm-here';
 
 var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
 var mapboxUrl = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=norges_grunnkart_graatone&zoom={z}&x={x}&y={y}';
+var topographicURL = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo4&zoom={z}&x={x}&y={y}';
+var terrainURL = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=terreng_norgeskart&zoom={z}&x={x}&y={y}';
+var simpleURL = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=egk&zoom={z}&x={x}&y={y}';
 var grayscale = L.tileLayer(mapboxUrl, {attribution: mapboxAttribution});
+var topographic = L.tileLayer(topographicURL, {attribution: mapboxAttribution});
+var terrain = L.tileLayer(terrainURL, {attribution: mapboxAttribution});
+var simple = L.tileLayer(simpleURL, {attribution: mapboxAttribution});
 
 export default {
   name: 'HeliksMap',
@@ -59,7 +71,14 @@ export default {
         showlist: false,
         streetsLookedUp: false,
         streetsNotFound: [],
-        streetsParsed: false
+        streetsParsed: false,
+        map: '',
+        coordinates: [],
+        iconSize: [20,35],
+        waypoints: [],
+        mapclicked: false,
+        routepossible: false,
+        routingControl: null
     }
   },
   created: function () {
@@ -72,12 +91,10 @@ export default {
   watch: {
     // when we have all the streets, we filter out those visited and keep them
     allStreets: function() {
-      console.log("allStreets changed");
       this.filterVisitedStreets();
     },
     visitedStreets: function() {
       // we have the updated list, now need to query the street names for coordinates
-
       if(!this.streetsParsed ){
         var count = 0;
         var streets = this.visitedStreets;
@@ -88,16 +105,41 @@ export default {
         }
       }
       this.streetsParsed = true;
+    },
+    coordinates: function() {
+      this.mapclicked = true;
+    },
+    waypoints: function() {
+        if(this.waypoints.length > 1){
+          this.routepossible = true;
+        }else {
+          this.routepossible = false;
+        }
     }
   },
   methods:  {
       initMap: function() {
-        var map = L.map('map', {
+
+        var baseMaps = {
+        	"<span style='color: gray'>Grayscale</span>": grayscale,
+        	"<span style='color: black'>Topographic</span>": topographic,
+          "<span style='color: darkgreen'>Terrain</span>": terrain,
+          "<span style='color: darkblue'>Simple</span>": simple
+        };
+
+        this.map = L.map('map', {
           center: [59.9245246,10.7617007],
           zoom: 14,
           layers: [grayscale]
         });
-        this.layerGroup = L.layerGroup().addTo(map);
+
+        L.control.layers(baseMaps).addTo(this.map);
+        this.layerGroup = L.layerGroup().addTo(this.map);
+      },
+      clickMap: function(e) {
+        // show coordinates when clicking at some point in the map
+        var latlng = this.map.mouseEventToLatLng(e);
+        this.coordinates = [latlng.lat, latlng.lng];
       },
       getBluePlaques: function() {
           this.axios.get('api/v1/oslogater')
@@ -123,7 +165,6 @@ export default {
               self.visitedStreets.push(value);
             }
           });
-          console.log("number of streets visited: " + self.visitedStreets.length);
           this.magicNumber = self.visitedStreets.length;
       },
       customIcon: function() {
@@ -141,6 +182,89 @@ export default {
         var newIcon = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-' + color + '.png';
         return newIcon;
       },
+      getIcon: function(color){
+        return new L.Icon({
+          iconUrl: this.coloredIcon(color),
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [20,35],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [35,35]
+        });
+      },
+      addPoint: function() {
+          this.waypoints.push(this.coordinates);
+      },
+      clearRoute: function() {
+        this.waypoints = [];
+        if (this.routingControl != null) {
+            this.map.removeControl(this.routingControl);
+            this.routingControl = null;
+        }
+      },
+      plotRoute: function() {
+
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(this.map);
+
+        var wayPoint1 = L.latLng(59.93222811929446, 10.746143419323314);
+        var wayPoint2 = L.latLng(59.92319770615971, 10.76061845015068);
+
+        var rWP1 = new L.Routing.Waypoint;
+        rWP1.latLng = wayPoint1;
+
+        var rWP2 = new L.Routing.Waypoint;
+        rWP2.latLng = wayPoint2;
+
+        var green = new L.Icon({
+          iconUrl: this.coloredIcon('green'),
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [this.iconSize],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [35,35]
+        });
+
+        var red = new L.Icon({
+          iconUrl: this.coloredIcon('red'),
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [this.iconSize],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [35,35]
+        });
+
+        var marker_icon;
+
+        this.routingControl = L.Routing.control({
+          waypoints: this.waypoints,
+          createMarker: function (i, start, n){
+            if (i == 0) {
+                // This is the first marker, indicating start
+                marker_icon = green
+            } else if (i == n -1) {
+                //This is the last marker indicating destination
+                marker_icon = red
+            }
+
+            var marker = L.marker (start.latLng, {
+               icon: marker_icon
+             })
+             return marker
+
+          },
+          useZoomParameter: true,
+          showAlternatives: false,
+          containerClassName: 'route-panel',
+          summaryTemplate: '<h2>{name}</h2><h3>{distance}, {time}',
+          waypointMode: 'snap',
+          router: L.Routing.mapbox('pk.eyJ1IjoiaGVsaWtzb3duIiwiYSI6ImNrMWdldXlmeDEzdW8zbW1tcDZ5ODRjcHcifQ.WEeC82uX58mZ1j3KVcxarQ')
+        }).addTo(this.map);
+
+        //this.map.fitBounds(L.latLngBounds(this.waypoints));
+
+      },
       placeMarker: function(latlng, title, color, size, add, type){
         var iconSize;
         var theMarker = {};
@@ -156,7 +280,7 @@ export default {
         var icon = new L.Icon({
           iconUrl: this.coloredIcon(color),
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: iconSize,
+          iconSize: [iconSize],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
           shadowSize: [35,35]
@@ -168,9 +292,10 @@ export default {
           'icon': icon
         };
 
-        theMarker = L.marker(latlng, options);//.addTo(map).bindPopup(title);
+        theMarker = L.marker(latlng, options);
         theMarker.bindPopup(title);
         theMarker.addTo(this.layerGroup);
+
         if(type == 'bluemarker'){
           this.blueMarkers.push(theMarker._leaflet_id);
         }else {
@@ -191,7 +316,6 @@ export default {
         }
       },
       removeMarkers: function(markerlist) {
-        console.log("callign removal");
         var self = this;
         markerlist.forEach(function(value, index ) {
           self.layerGroup.removeLayer(value);
@@ -207,7 +331,7 @@ export default {
         }else {
           this.visitedStreetList.forEach(function(value, index ) {
           var latlng = [value.lat, value.lon];
-          var title = value.navn + ", " + value.adresse;
+          var title = value.dato + " - " + value.adresse;
           self.placeMarker(latlng, title,value.color,'normal',false, 'streetmarker');
           self.markersAdded = true;
         });
@@ -227,59 +351,10 @@ export default {
           });
         }
       },
-
-      plotMarkers: function(){
-        var addresses = this.visitedStreetList;
-        for (let value of addresses) {
-          var latlng = [value.lat, value.lon];
-          this.placeMarker(latlng, value.adressenavn + " - " + value.dato, value.color, 'normal', true);
-        }
-
-        if(!this.markersAdded){
-          this.markersAdded = true;
-        }else{
-          this.markersAdded = false;
-          //self.removeMarkers(self.visitedStreets);
-        }
-
-      },
-      plotData: function(d,streetname,date_visited){
-
-        var streets = JSON.parse(JSON.stringify(d,0,2));
-        if(streets.adresser.length > 0 ){
-          var latlng = [streets.adresser[0].representasjonspunkt.lat,streets.adresser[0].representasjonspunkt.lon];
-          if(streets.adresser[0].adressenavn.toLowerCase() == streetname.toLowerCase()){
-            var color = this.getCityDivisionColor(streets.adresser[0].postnummer.substr(0,2));
-            this.placeMarker(latlng, streetname + " - " + date_visited, color, 'normal', true);
-            //this.placeMarker(latlng, streetname + " - " + date_visited.replace(/\s/g, ""), color, 'normal', true);
-          }else{
-            console.log("no match: " + streets.adresser[0].adressenavn.toLowerCase() + " is unequal to " + streetname.toLowerCase() );
-          }
-          var streetCoords = [];
-          var addresses = streets.adresser;
-          addresses.forEach(function(value, index){
-            if(value.adressenavn.toLowerCase() == streetname.toLowerCase() ){
-              var coords = [value.representasjonspunkt.lat, value.representasjonspunkt.lon];
-              streetCoords.push(coords);
-            }
-          });
-          var t = JSON.stringify(streetCoords, 2,null);
-          return t;
-        }
-      },
       createQuery: function(streetname){
         var query = 'https://ws.geonorge.no/adresser/v1/sok?adressenavn=' + streetname + '&kommunenummer=0301';
         var filtrer = '&filtrer=adresser.representasjonspunkt.lat,adresser.representasjonspunkt.lon,adresser.postnummer,adresser.adressenavn';
         return query + filtrer;
-      },
-      retrieveStreetCoords: function(q,streetname,date_visited){
-        this.axios.get(q)
-          .then(response => {
-            if (response.data) {
-              var s = this.plotData(response.data,streetname,date_visited);
-              this.visitedObj[streetname] = s;
-            }
-          });
       },
       retrieveStreetLatLon: function(q,streetname,date_visited){
         var mingate = streetname.replace('’', '\'');
@@ -314,37 +389,7 @@ export default {
               }
             }
         });
-      }
-
-      // handleVisitedStreets: function() {
-      //
-      //   var counter = 0;
-      //   self = this;
-      //
-      //   if(!self.markersAdded){
-      //     var streets = self.visitedStreets;
-      //
-      //     for (let value of addresses) {
-      //       counter++;
-      //       var s = self.createQuery(value.adresse);
-      //       var date_visited = value.datobesøkt + value.år;
-      //       var a = self.retrieveStreetCoords(s,value.adresse,date_visited);
-      //
-      //     }
-      //
-      //     self.populateVisitedList();
-      //     self.markersAdded = true;
-      //     self.visited = counter;
-      //   }else{
-      //     self.visited = 0;
-      //     self.removeMarkers(self.visitedStreets);
-      //     self.markersAdded = false;
-      //   }
-      // },
-      // populateVisitedList: function() {
-      //   console.log("finished markers");
-      // },
-
+    }
   }
 }
 
@@ -357,20 +402,49 @@ export default {
     overflow: auto;
     position: relative;
     display:grid;
+    grid-template-columns: 3fr 1fr;
+  }
+
+  #HeliksMap h3 {
+    font-size: 1rem;
+    padding-left: 0.5rem;
   }
 
   #map {
     height: 67.5vh;
   }
 
+  .route-panel {
+    background: white;
+    opacity: 0.5;
+  }
+
+  .route-panel h2 {
+    font-size: 18px;
+  }
+
+  .route-panel h3 {
+    font-size: 16px;
+  }
+
+  .dot {
+    height: 5px;
+    width: 5px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 1rem;
+}
+
+
   .left-side {
-    grid-column: col-start -1 / span 11;
+    /* grid-column: col-start -1 / span 11; */
     grid-row: 1;
 
   }
 
   .right-side {
-    grid-column: col-start 10 / span 3;
+    /* grid-column: col-start 10 / span 3; */
     grid-row: 1;
   }
 
@@ -395,7 +469,7 @@ export default {
     text-transform:uppercase;
   }
 
-  .right {
+  /* .right {
     float:right;
     width: 20%;
   }
@@ -404,7 +478,7 @@ export default {
     float:left;
     width: 80%;
     overflow: scroll;
-  }
+  } */
 
   .status {
     padding: 1.25rem;
@@ -482,5 +556,13 @@ export default {
     background-color:yellow;
   }
 
+  .regular {
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: 1px solid grey;
+    min-width: 100px;
+    margin: .25rem 0 0.25rem 1rem;
+  }
 
 </style>
