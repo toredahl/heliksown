@@ -5,13 +5,14 @@ var serveStatic = require('serve-static');
 app = express();
 
 var axios = require('axios');
-var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=4&columns=false';
+var bluePlaqueUrl = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=2&columns=false';
 var plants = 'http://gsx2json.com/api?id=1rYoxp-qLJDw62Uw1C53cUjr0qxr8-_KUu82oWAgmVr4&sheet=1'
 var jservice = 'http://jservice.io/api/clues?value=1000&offset='
 
 // besøkte oslogater
 var visitedStreets = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=1&columns=false';
 //https://docs.google.com/spreadsheets/d/e/2PACX-1vRSrCO7HMGNuot2J78xPMTrfOQWCSW-ZQh4lwGmCaNTbIZ1ymQp-IwS9fCtSrU9AsMvC-eEir0YSt9i/pubhtml
+var remaURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=3&columns=false';
 
 var json_plants;
 var limit = 10;
@@ -20,7 +21,8 @@ var qlinks = [];
 var jquestions;
 var q, p;
 var streets = [],
-    blueplaques = [];
+    blueplaques = [],
+    remaoutlets = [];
 
 const printNow = () => {
   var d = Date();
@@ -102,12 +104,10 @@ const updatePlants = () => {
   });
 }
 
-
 const countStreets = async () => {
   const breeds = getDataAxios(visitedStreets)
     .then(response => {
       if (response.data) {
-        //streets = Object.entries(response.data.rows);
         var gater = response.data.rows;
         streets = gater;
       }
@@ -121,7 +121,6 @@ const getBluePlaques = async () => {
   const plaques = getDataAxios(bluePlaqueUrl)
     .then(response => {
       if (response.data) {
-        //blueplaques = Object.entries(response.data.rows);
         blueplaques = response.data.rows;
       }
     })
@@ -129,6 +128,19 @@ const getBluePlaques = async () => {
       console.log(error)
     })
 }
+
+const getRemaOutlets = async () => {
+  const plaques = getDataAxios(remaURL)
+    .then(response => {
+      if (response.data) {
+        remaoutlets = response.data.rows;
+      }
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
+
 
 const getStreetData = async (url, list) => {
   // attempting refactoring but fails...
@@ -149,13 +161,15 @@ const getStreetData = async (url, list) => {
 const updateStreets = () => {
   countStreets();
   getBluePlaques();
+  getRemaOutlets();
 
   app.get('/api/v1/oslogater', (req, res) => {
     res.status(200).send({
       success: 'true',
       message: 'Bydata hentet - SUKSESS ',
       gater:  streets,
-      blaaskilt: blueplaques
+      blaaskilt: blueplaques,
+      remabutikker: remaoutlets
     })
   });
 }

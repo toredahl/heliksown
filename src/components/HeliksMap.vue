@@ -8,6 +8,7 @@
       <div id="mapButtons" class="button-row">
         <button id="mark" class="static1 green" @click="handleStreetMarkers()">Besøkte</button>
         <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
+        <!-- <button id="rema-outlets" class="static3 orange" @click="handleRemaOutlets()">REMA</button> -->
       </div>
       <h3>Klikk på kart for å se koordinater</h3>
       <div id="coords" class="status">
@@ -18,13 +19,24 @@
       <button class="regular" @click="addPoint()" v-if="mapclicked">Legg til punkt</button>
       <button class="regular" @click="plotRoute()" v-if="routepossible">Vis rute</button>
       <button class="regular"  @click="clearRoute()" v-if="routepossible">Fjern</button>
+      <button class="regular"  @click="findMe()" v-if="myposition">Finn meg</button>
       <div id="status" class="status">
-        {{visited}}
+        {{position}}
       </div>
-      <div class="visited">
-        <ul id="been-there">
+      <div class="visited darkgrey">
+        <ul id="been-there" class="decimal">
           <li v-for="item in visitedStreetList" :key="item.id">
             {{ item.adresse }} - {{ item.dato }}   <span class="dot" :style="{ background: item.color }"></span>
+          </li>
+          <li v-for="item in streetsNotFound" :key="item.id">
+            Ikke markert på kart: {{ item }}
+          </li>
+        </ul>
+      </div>
+      <div class="blaaskilt darkblue">
+        <ul id="blue-signs" class="greek">
+          <li v-for="item in bluePlaqueList" :key="item.id">
+            {{item.title }} - {{ item.adresse }}  </span>
           </li>
         </ul>
       </div>
@@ -37,7 +49,6 @@
 
 import L from 'leaflet';
 import 'leaflet-routing-machine';
-//import 'lrm-here';
 
 var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
 var mapboxUrl = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=norges_grunnkart_graatone&zoom={z}&x={x}&y={y}';
@@ -46,6 +57,7 @@ var terrainURL = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?laye
 var simpleURL = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=egk&zoom={z}&x={x}&y={y}';
 var grayscale = L.tileLayer(mapboxUrl, {attribution: mapboxAttribution});
 var topographic = L.tileLayer(topographicURL, {attribution: mapboxAttribution});
+var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}{r}.png', {  attribution: '© OpenStreetMap contributors'})
 var terrain = L.tileLayer(terrainURL, {attribution: mapboxAttribution});
 var simple = L.tileLayer(simpleURL, {attribution: mapboxAttribution});
 
@@ -59,12 +71,16 @@ export default {
         allStreets: [],
         visitedStreets: [],
         blueMarkers: [],
+        bluePlaqueList: [],
         streetMarkers: [],
+        routeMarkers: [],
+        remaMarkers: [],
         visitedStreetList: [],
         visitedStreetsLayer: null,
         markersAdded: false,
         visitedObj: {},
         bluePlaquesAdded: false,
+        remaOutletsAdded: false,
         visited: 0,
         magicNumber: 0,
         comparison: 0,
@@ -75,20 +91,31 @@ export default {
         map: '',
         coordinates: [],
         iconSize: [20,35],
+        smallIconSize: [16,24],
         waypoints: [],
         mapclicked: false,
         routepossible: false,
-        routingControl: null
+        routingControl: null,
+        currentPosition: [0,0],
+        wpid: null,
+        currentMarkerId: null,
+        currentMarkerList: [],
+        position: '',
+        myposition: false
     }
   },
   created: function () {
         this.getBluePlaques();
         this.getAllStreets();
+        this.pollPosition();
   },
   mounted() {
       this.initMap();
   },
   watch: {
+    currentPosition: function() {
+      this.updateCurrentPosition();
+    },
     // when we have all the streets, we filter out those visited and keep them
     allStreets: function() {
       this.filterVisitedStreets();
@@ -122,6 +149,7 @@ export default {
 
         var baseMaps = {
         	"<span style='color: gray'>Grayscale</span>": grayscale,
+          "<span style='color: black'>OSM</span>": osm,
         	"<span style='color: black'>Topographic</span>": topographic,
           "<span style='color: darkgreen'>Terrain</span>": terrain,
           "<span style='color: darkblue'>Simple</span>": simple
@@ -141,13 +169,32 @@ export default {
         var latlng = this.map.mouseEventToLatLng(e);
         this.coordinates = [latlng.lat, latlng.lng];
       },
+      pollPosition: function() {
+        if ("geolocation" in navigator) {
+          self = this;
+          var geo_options = {
+            enableHighAccuracy: true,
+            maximumAge        : 30000,
+            timeout           : 25000
+          };
+          self.wpid = navigator.geolocation.watchPosition(self.success, self.geo_error, self.geo_options);
+        }
+      },
+      updateCurrentPosition: function() {
+        var currentMarkerId = this.addMarker(this.currentPosition, 'min posisjon', 'orange', 'small', 'current' );
+      },
       getBluePlaques: function() {
           this.axios.get('api/v1/oslogater')
           .then(response => {
             if (response.data) {
-              this.blueSigns = response.data.blaaskilt;
+              var bluelist = this.blueSigns = response.data.blaaskilt;
+              self = this;
+              self.bluePlaqueList = [];
+              bluelist.forEach(function(value, index ) {
+                self.bluePlaqueList.push({'title':value.navn, 'adresse': value.adresse});
+              });
             }
-          })
+        })
       },
       getAllStreets: function() {
           this.axios.get('api/v1/oslogater')
@@ -155,7 +202,7 @@ export default {
             if (response.data) {
               this.allStreets = response.data.gater;
             }
-          })
+        })
       },
       filterVisitedStreets: function() {
           var streets = this.allStreets;
@@ -166,17 +213,6 @@ export default {
             }
           });
           this.magicNumber = self.visitedStreets.length;
-      },
-      customIcon: function() {
-         this.myIcon = L.icon({
-          iconUrl: 'my-icon.png',
-          iconSize: [25, 25],
-          iconAnchor: [22, 94],
-          popupAnchor: [-3, -76],
-          shadowUrl: 'my-icon-shadow.png',
-          shadowSize: [38, 55],
-          shadowAnchor: [22, 94]
-        });
       },
       coloredIcon: function(color){
         var newIcon = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-' + color + '.png';
@@ -194,6 +230,10 @@ export default {
       },
       addPoint: function() {
           this.waypoints.push(this.coordinates);
+          this.placeMarker(this.coordinates, 'route waypoint','yellow','small',false,'routemarker');
+      },
+      addMarker: function(coordinates, title, color, size, type ) {
+          return this.placeMarker(coordinates, 'din posisjon','orange','small',false,'current');
       },
       clearRoute: function() {
         this.waypoints = [];
@@ -203,67 +243,36 @@ export default {
         }
       },
       plotRoute: function() {
-
-        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(this.map);
-
-        var wayPoint1 = L.latLng(59.93222811929446, 10.746143419323314);
-        var wayPoint2 = L.latLng(59.92319770615971, 10.76061845015068);
-
-        var rWP1 = new L.Routing.Waypoint;
-        rWP1.latLng = wayPoint1;
-
-        var rWP2 = new L.Routing.Waypoint;
-        rWP2.latLng = wayPoint2;
-
-        var green = new L.Icon({
-          iconUrl: this.coloredIcon('green'),
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [this.iconSize],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [35,35]
-        });
-
-        var red = new L.Icon({
-          iconUrl: this.coloredIcon('red'),
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [this.iconSize],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [35,35]
-        });
-
+        var yellow = this.getIcon('yellow');
+        var red = this.getIcon('red');
         var marker_icon;
-
         this.routingControl = L.Routing.control({
           waypoints: this.waypoints,
           createMarker: function (i, start, n){
-            if (i == 0) {
-                // This is the first marker, indicating start
-                marker_icon = green
-            } else if (i == n -1) {
-                //This is the last marker indicating destination
-                marker_icon = red
-            }
-
+            if (i == 0) {marker_icon = yellow
+            } else if (i == n -1) {marker_icon = red}
             var marker = L.marker (start.latLng, {
                icon: marker_icon
-             })
+             });
              return marker
-
           },
           useZoomParameter: true,
-          showAlternatives: false,
-          containerClassName: 'route-panel',
           summaryTemplate: '<h2>{name}</h2><h3>{distance}, {time}',
           waypointMode: 'snap',
+          lineOptions: {
+            styles: [{color: 'green', opacity: 0.5, weight: 7}]
+          },
           router: L.Routing.mapbox('pk.eyJ1IjoiaGVsaWtzb3duIiwiYSI6ImNrMWdldXlmeDEzdW8zbW1tcDZ5ODRjcHcifQ.WEeC82uX58mZ1j3KVcxarQ')
         }).addTo(this.map);
-
-        //this.map.fitBounds(L.latLngBounds(this.waypoints));
-
+        this.routeMarkers = this.removeMarkers(this.routeMarkers);
+      },
+      findMe: function() {
+        if(this.currentPosition[0] != 0){
+          var corner1 = L.latLng(this.currentPosition[0] + 0.01, this.currentPosition[1] + 0.01),
+          corner2 = L.latLng(this.currentPosition[0] - 0.01, this.currentPosition[1] - 0.01),
+          bounds = L.latLngBounds(corner1, corner2);
+          this.map.fitBounds(L.latLngBounds(bounds)).setZoom(16);
+        }
       },
       placeMarker: function(latlng, title, color, size, add, type){
         var iconSize;
@@ -277,14 +286,7 @@ export default {
           iconSize = [26,42]
         }
 
-        var icon = new L.Icon({
-          iconUrl: this.coloredIcon(color),
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [iconSize],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [35,35]
-        });
+        var icon = this.getIcon(color);
 
         var options = {
           'title': title,
@@ -298,9 +300,14 @@ export default {
 
         if(type == 'bluemarker'){
           this.blueMarkers.push(theMarker._leaflet_id);
-        }else {
+        }else if (type == 'streetmarker'){
             this.streetMarkers.push(theMarker._leaflet_id);
-        }
+        }else if (type == 'routemarker'){
+            this.routeMarkers.push(theMarker._leaflet_id);
+        }else{
+          console.log("no marker kept for route");
+          return theMarker._leaflet_id;
+      }
 
       },
       getCityDivisionColor: function(muni){
@@ -337,18 +344,60 @@ export default {
         });
       }
     },
-      handleBluePlaques: function() {
+    template: function(strings, ...keys) {
+      return (function(...values) {
+        var dict = values[values.length - 1] || {};
+        var result = [strings[0]];
+        keys.forEach(function(key, i) {
+          var value = Number.isInteger(key) ? values[key] : dict[key];
+          result.push(value, strings[i + 1]);
+        });
+      return result.join('');
+    });
+    },
+    handleBluePlaques: function() {
         var self = this;
         if(self.bluePlaquesAdded){
           self.blueMarkers = self.removeMarkers(self.blueMarkers);
           self.bluePlaquesAdded = false;
-          }else {
+        }else {
             this.blueSigns.forEach(function(value, index ) {
+            try{
               var latlng = [value.lat, value.lon];
               var title = value.navn + ", " + value.adresse;
               self.placeMarker(latlng, title,'blue','normal',false, 'bluemarker');
               self.bluePlaquesAdded = true;
+            }catch (error){
+              var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
+              console.log(t1Closure(value, error));
+            }
           });
+        }
+      },
+      handleRemaOutlets: function() {
+          var self = this;
+          if(self.RemaAdded){
+            self.remaMarkers = self.removeMarkers(self.remaMarkers);
+            self.RemaAdded = false;
+          }else {
+              this.remaOutlets.forEach(function(value, index ) {
+          });
+          }
+      },
+      success: function(position) {
+        self.currentPosition = [position.coords.latitude, position.coords.longitude];
+        var yPos = self.template`Din posisjon (lat,lng): ${0}, ${1} `;
+        self.position = yPos(position.coords.latitude, position.coords.longitude);
+        self.myposition = true;
+      },
+      error: function (error) {
+        this.position = 'Klarer ikke hente din posisjon ' + error;
+      },
+      geo_error: function (error) {
+        console.log("Sorry, no position available.");
+        console.log('ERROR(' + error.code + '): ' + error.message);
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(success, error);
         }
       },
       createQuery: function(streetname){
@@ -396,7 +445,7 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style>
 
   #HeliksMap {
     overflow: auto;
@@ -407,7 +456,17 @@ export default {
 
   #HeliksMap h3 {
     font-size: 1rem;
+    margin-left: 1rem;
+  }
+
+  #HeliksMap .leaflet-routing-alternatives-container, .leaflet-routing-alternatives-container, .heliks-map-route-panel {
+    background-color: rgba(256,256,256,0.6);
     padding-left: 0.5rem;
+  }
+
+  #HeliksMap .leaflet-routing-alternatives-container h2, .leaflet-routing-alternatives-container h2, .heliks-map-route-panel h2 {
+    cursor: pointer;
+    font-size: 1.4rem;
   }
 
   #map {
@@ -434,8 +493,19 @@ export default {
     border-radius: 50%;
     display: inline-block;
     margin-left: 1rem;
-}
+  }
 
+  .decimal {
+    list-style-type: decimal;
+    margin-left: 0.5rem;
+    padding-left: 0;
+  }
+
+  .greek {
+    list-style-type: lower-greek;
+    margin-left: 0.5rem;
+    padding-left: 0;
+  }
 
   .left-side {
     /* grid-column: col-start -1 / span 11; */
@@ -452,11 +522,16 @@ export default {
     position: absolute;
     top: 0;
     left: 0;
+    top: -90px;
+    left: 37px;
   }
 
-  .darkblue {
+  .darkblue, .darkblue ul li {
     background-color: rgb(48,50,78);
     color: white;
+  }
+  .darkgrey {
+    background-color: #A9A9A9;
   }
 
   ul {
@@ -469,31 +544,19 @@ export default {
     text-transform:uppercase;
   }
 
-  /* .right {
-    float:right;
-    width: 20%;
-  }
-
-  .left {
-    float:left;
-    width: 80%;
-    overflow: scroll;
-  } */
-
   .status {
-    padding: 1.25rem;
+    padding: .5rem;
     font-size: 11px;
     border:2px solid black;
     margin: 1rem;
   }
 
-  .visited {
+  .visited, .blaaskilt {
     padding: 1rem;
     border: 3px solid black;
-    background-color: #A9A9A9;
     font-size: 9px;
     overflow: scroll;
-    height: 400px;
+    height: 250px;
     margin: 1rem;
   }
 
@@ -506,15 +569,15 @@ export default {
 
   .static2 {
     position:absolute;
-    top: 150px;
-    left:17px;
+    top: 100px;
+    left: 125px;
     z-index: 1000;
   }
 
   .static3 {
     position:absolute;
-    top: 200px;
-    left:17px;
+    top: 100px;
+    left:238px;
     z-index: 1000;
   }
 
@@ -563,6 +626,7 @@ export default {
     border: 1px solid grey;
     min-width: 100px;
     margin: .25rem 0 0.25rem 1rem;
+    box-shadow:none;
   }
 
 </style>
