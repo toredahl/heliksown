@@ -20,9 +20,19 @@
       <button class="regular" @click="plotRoute()" v-if="routepossible">Vis rute</button>
       <button class="regular"  @click="clearRoute()" v-if="routepossible">Fjern</button>
       <button class="regular"  @click="findMe()" v-if="myposition">Finn meg</button>
+      <button class="regular"  @click="simulatePosition()" v-if="mapclicked">Simulate</button>
+      <button class="regular"  @click="updateStaticMap()">Static</button>
+      <button class="regular"  @click="captureMap()">Capture</button>
+
       <div id="status" class="status">
         {{position}}
       </div>
+
+
+      <div id="staticMap" class="status">
+        <img v-if="showStatic" :src="staticMapUrl" alt="static map view">
+      </div>
+      <div id="img-out"></div>
       <div class="visited darkgrey">
         <ul id="been-there" class="decimal">
           <li v-for="item in visitedStreetList" :key="item.id">
@@ -49,6 +59,7 @@
 
 import L from 'leaflet';
 import 'leaflet-routing-machine';
+import html2canvas from 'html2canvas';
 
 var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
 var mapboxUrl = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=norges_grunnkart_graatone&zoom={z}&x={x}&y={y}';
@@ -99,9 +110,11 @@ export default {
         currentPosition: [0,0],
         wpid: null,
         currentMarkerId: null,
-        currentMarkerList: [],
         position: '',
-        myposition: false
+        myposition: false,
+        positionFound: false,
+        staticMapUrl: '',
+        showStatic: false
     }
   },
   created: function () {
@@ -164,6 +177,32 @@ export default {
         L.control.layers(baseMaps).addTo(this.map);
         this.layerGroup = L.layerGroup().addTo(this.map);
       },
+      simulatePosition: function() {
+        if(this.myposition){
+          this.currentPosition = this.coordinates;
+        }
+      },
+      updateStaticMap() {
+        var lat = this.currentPosition[0];
+        var lon = this.currentPosition[1];
+        var url = "https://maps.googleapis.com/maps/api/staticmap?center=" + lat +","+ lon + "&zoom=15&size=350x350&markers=color:red%7Clabel:S%7C"+ lat + "," + lon + "&key=AIzaSyCOj9HQAxbaFjpMfTeFg3aiY0l1_egtR30";
+        this.staticMapUrl = url;
+        this.showStatic = true;
+      },
+      captureMap() {
+        var mapElement = document.querySelector("#staticMap img");
+        var imgOut = document.querySelector("#img-out");
+
+        html2canvas(document.getElementById('staticMap'),
+        {
+          useCORS: true
+        }).
+        then(function(canvas)
+        {
+          imgOut.append(canvas);
+        });
+
+      },
       clickMap: function(e) {
         // show coordinates when clicking at some point in the map
         var latlng = this.map.mouseEventToLatLng(e);
@@ -181,7 +220,13 @@ export default {
         }
       },
       updateCurrentPosition: function() {
-        var currentMarkerId = this.addMarker(this.currentPosition, 'min posisjon', 'orange', 'small', 'current' );
+
+        if(this.positionFound){
+          this.removeMarkers([this.currentMarkerId]);
+        }
+
+        this.currentMarkerId = this.addMarker(this.currentPosition, 'min posisjon', 'orange', 'small', 'current' );
+        this.positionFound = true;
       },
       getBluePlaques: function() {
           this.axios.get('api/v1/oslogater')
@@ -230,10 +275,11 @@ export default {
       },
       addPoint: function() {
           this.waypoints.push(this.coordinates);
-          this.placeMarker(this.coordinates, 'route waypoint','yellow','small',false,'routemarker');
+          this.routeMarkers.push(this.placeMarker(this.coordinates, 'route waypoint','yellow'));
       },
       addMarker: function(coordinates, title, color, size, type ) {
-          return this.placeMarker(coordinates, 'din posisjon','orange','small',false,'current');
+          var mid = this.placeMarker(coordinates, 'din posisjon','orange');
+          return mid;
       },
       clearRoute: function() {
         this.waypoints = [];
@@ -268,47 +314,21 @@ export default {
       },
       findMe: function() {
         if(this.currentPosition[0] != 0){
-          var corner1 = L.latLng(this.currentPosition[0] + 0.01, this.currentPosition[1] + 0.01),
-          corner2 = L.latLng(this.currentPosition[0] - 0.01, this.currentPosition[1] - 0.01),
-          bounds = L.latLngBounds(corner1, corner2);
-          this.map.fitBounds(L.latLngBounds(bounds)).setZoom(16);
+          this.map.panTo(this.currentPosition);
         }
       },
-      placeMarker: function(latlng, title, color, size, add, type){
-        var iconSize;
+      placeMarker: function(latlng, title, color, add, type){
         var theMarker = {};
-
-        if(size=='normal'){
-          iconSize = [20,35]
-        }else if(size=='small'){
-          iconSize = [16,24]
-        }else{
-          iconSize = [26,42]
-        }
-
         var icon = this.getIcon(color);
-
         var options = {
           'title': title,
           'opacity': 1.0,
           'icon': icon
         };
-
         theMarker = L.marker(latlng, options);
         theMarker.bindPopup(title);
         theMarker.addTo(this.layerGroup);
-
-        if(type == 'bluemarker'){
-          this.blueMarkers.push(theMarker._leaflet_id);
-        }else if (type == 'streetmarker'){
-            this.streetMarkers.push(theMarker._leaflet_id);
-        }else if (type == 'routemarker'){
-            this.routeMarkers.push(theMarker._leaflet_id);
-        }else{
-          console.log("no marker kept for route");
-          return theMarker._leaflet_id;
-      }
-
+        return theMarker._leaflet_id;
       },
       getCityDivisionColor: function(muni){
         switch (muni) {
@@ -339,7 +359,7 @@ export default {
           this.visitedStreetList.forEach(function(value, index ) {
           var latlng = [value.lat, value.lon];
           var title = value.dato + " - " + value.adresse;
-          self.placeMarker(latlng, title,value.color,'normal',false, 'streetmarker');
+          self.streetMarkers.push(self.placeMarker(latlng, title,value.color));
           self.markersAdded = true;
         });
       }
@@ -365,11 +385,10 @@ export default {
             try{
               var latlng = [value.lat, value.lon];
               var title = value.navn + ", " + value.adresse;
-              self.placeMarker(latlng, title,'blue','normal',false, 'bluemarker');
+              self.blueMarkers.push(self.placeMarker(latlng, title,'blue'));
               self.bluePlaquesAdded = true;
             }catch (error){
               var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
-              console.log(t1Closure(value, error));
             }
           });
         }
@@ -394,9 +413,7 @@ export default {
         this.position = 'Klarer ikke hente din posisjon ' + error;
       },
       geo_error: function (error) {
-        console.log("Sorry, no position available.");
-        console.log('ERROR(' + error.code + '): ' + error.message);
-        if ("geolocation" in navigator) {
+          if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(success, error);
         }
       },
@@ -412,9 +429,7 @@ export default {
         this.axios.get(q)
           .then(response => {
             if (response.data) {
-              //var s = this.plotData(response.data,streetname,date_visited);
               var streets = JSON.parse(JSON.stringify(response.data,0,2));
-
               var i = 0;
               var found = false;
               for (let value of streets.adresser) {
@@ -473,6 +488,10 @@ export default {
     height: 67.5vh;
   }
 
+  #img-out {
+    margin-left: 1rem;
+  }
+
   .route-panel {
     background: white;
     opacity: 0.5;
@@ -507,15 +526,19 @@ export default {
     padding-left: 0;
   }
 
-  .left-side {
-    /* grid-column: col-start -1 / span 11; */
+  .left-side, .right-side {
     grid-row: 1;
-
   }
 
-  .right-side {
-    /* grid-column: col-start 10 / span 3; */
-    grid-row: 1;
+  @media (max-width: 693px) {
+    .left-side, .right-side {
+      grid-column-start: none;
+    }
+
+    .right-side {
+      grid-row: 2;
+    }
+
   }
 
   .button-row {
@@ -625,7 +648,7 @@ export default {
     border-radius: 10px;
     border: 1px solid grey;
     min-width: 100px;
-    margin: .25rem 0 0.25rem 1rem;
+    margin: .25rem 0 0.25rem .5rem;
     box-shadow:none;
   }
 
