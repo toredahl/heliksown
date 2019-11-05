@@ -4,6 +4,9 @@ import HelloWorld from '@/components/HelloWorld'
 import HeliksMap from '@/components/HeliksMap'
 import PlantCollection from '@/components/PlantCollection'
 import Sandbox from '@/components/Sandbox'
+import Forms from '@/components/Sandboxes/Forms'
+import Directives from '@/components/Sandboxes/Directives'
+
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 
@@ -31,6 +34,11 @@ export default new Router({
       path: '/sandbox',
       name: 'Sandbox',
       component: Sandbox
+    },
+    {
+      path: '/exercises/directives',
+      name: 'Directives',
+      component: Directives
     }
   ]
 })

@@ -10,9 +10,11 @@ var plants = 'http://gsx2json.com/api?id=1rYoxp-qLJDw62Uw1C53cUjr0qxr8-_KUu82oWA
 var jservice = 'http://jservice.io/api/clues?value=1000&offset='
 
 // besøkte oslogater
+// drive url: https://docs.google.com/spreadsheets/d/17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE/edit#gid=1011399023
 var visitedStreets = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=1&columns=false';
 //https://docs.google.com/spreadsheets/d/e/2PACX-1vRSrCO7HMGNuot2J78xPMTrfOQWCSW-ZQh4lwGmCaNTbIZ1ymQp-IwS9fCtSrU9AsMvC-eEir0YSt9i/pubhtml
 var remaURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=3&columns=false';
+var kiwiURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=4&columns=false';
 
 var json_plants;
 var limit = 10;
@@ -22,7 +24,9 @@ var jquestions;
 var q, p;
 var streets = [],
     blueplaques = [],
-    remaoutlets = [];
+    remaoutlets = []
+    kiwioutlets = []
+    ;
 
 const printNow = () => {
   var d = Date();
@@ -55,6 +59,7 @@ const pollQuestionApi = async () => {
   randomQuestionLinks()
   qcollection = [];
   for(l in qlinks){
+    console.log(qlinks[l]);
     var questions = getDataAxios(qlinks[l])
       .then(response => {
         if (response.data) {
@@ -129,18 +134,26 @@ const getBluePlaques = async () => {
     })
 }
 
-const getRemaOutlets = async () => {
-  const plaques = getDataAxios(remaURL)
+const getOutlets = async (clist, url) => {
+  console.log("url is: " + url);
+  var list = [];
+  //const outlets = getDataAxios(remaURL)
+  const outlets = getDataAxios(url)
     .then(response => {
       if (response.data) {
-        remaoutlets = response.data.rows;
+        if(clist == 1){
+          remaoutlets = response.data.rows;
+        }else if(clist == 2){
+          kiwioutlets = response.data.rows;
+        }
+
       }
     })
     .catch(error => {
       console.log(error)
     })
-}
 
+}
 
 const getStreetData = async (url, list) => {
   // attempting refactoring but fails...
@@ -161,7 +174,8 @@ const getStreetData = async (url, list) => {
 const updateStreets = () => {
   countStreets();
   getBluePlaques();
-  getRemaOutlets();
+  getOutlets(1,remaURL);
+  getOutlets(2,kiwiURL);
 
   app.get('/api/v1/oslogater', (req, res) => {
     res.status(200).send({
@@ -169,7 +183,8 @@ const updateStreets = () => {
       message: 'Bydata hentet - SUKSESS ',
       gater:  streets,
       blaaskilt: blueplaques,
-      remabutikker: remaoutlets
+      remabutikker: remaoutlets,
+      kiwibutikker: kiwioutlets
     })
   });
 }

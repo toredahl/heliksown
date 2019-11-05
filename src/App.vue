@@ -7,6 +7,8 @@
         <li><router-link to="/helloworld"> HelloWorld</router-link></li>
         <li><router-link to="/plantesamling"> Plantesamling</router-link></li>
         <li><router-link to="/sandbox"> Sandbox</router-link></li>
+        <li><router-link to="/forms"> Forms</router-link></li>
+        <li><router-link to="/exercises/directives"> Exercise: Directives</router-link></li>
       </ul>
     </nav>
 
@@ -19,6 +21,7 @@
 
       <div class="middle">
           <router-view/>
+          <Login />
       </div>
 
       <div class="right">
@@ -41,6 +44,7 @@
 </template>
 
 <script>
+// import Login from './components/Login.vue';
 import axios from 'axios';
 
 export default {
@@ -119,6 +123,9 @@ export default {
         this.getAdvice();
       }, 30000);
   }
+  // components: {
+  //   Login
+  // }
 }
 </script>
 
@@ -182,12 +189,12 @@ export default {
 }
 
 nav {
-  display: grid;
-  grid-template-columns: repeat(12, [col-start] 1fr);
-  grid-gap: 10px;
+
+  display: flex;
+  justify-content: center;
   ul {
     list-style-type: none;
-    grid-column: col-start 3;
+
     li {
       background: $menu-blue;
       border-radius: 18px;

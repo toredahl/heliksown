@@ -1,14 +1,17 @@
 <template>
 
   <div id="HeliksMap">
+
     <div class="left-side">
       <div id="map" v-on:click="clickMap($event)"></div>
     </div>
+
     <div class="right-side" style="">
       <div id="mapButtons" class="button-row">
-        <button id="mark" class="static1 green" @click="handleStreetMarkers()">Besøkte</button>
+        <button id="mark" class="static1 red" @click="handleStreetMarkers()">Besøkte</button>
         <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
-        <!-- <button id="rema-outlets" class="static3 orange" @click="handleRemaOutlets()">REMA</button> -->
+        <button id="rema-outlets" class="static3 orange" @click="handleRemaOutlets()">REMA</button>
+        <button id="kiwi-outlets" class="static4 green" @click="handleKiwiOutlets()">KIWI</button>
       </div>
       <h3>Klikk på kart for å se koordinater</h3>
       <div id="coords" class="status">
@@ -28,7 +31,6 @@
         {{position}}
       </div>
 
-
       <div id="staticMap" class="status">
         <img v-if="showStatic" :src="staticMapUrl" alt="static map view">
       </div>
@@ -46,6 +48,22 @@
       <div class="blaaskilt darkblue">
         <ul id="blue-signs" class="greek">
           <li v-for="item in bluePlaqueList" :key="item.id">
+            {{item.title }} - {{ item.adresse }}  </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="remaoutlets darkorange">
+        <ul id="rema-butikker" class="hebrew">
+          <li v-for="item in remaOutlets" :key="item.id">
+            {{item.title }} - {{ item.adresse }}  </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="kiwioutlets green">
+        <ul id="kiwi-butikker" class="latin">
+          <li v-for="item in kiwiOutlets" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
         </ul>
@@ -86,12 +104,16 @@ export default {
         streetMarkers: [],
         routeMarkers: [],
         remaMarkers: [],
+        remaOutlets: [],
+        remaObjects: [],
+        kiwiMarkers: [],
+        kiwiOutlets: [],
+        kiwiObjects: [],
         visitedStreetList: [],
         visitedStreetsLayer: null,
         markersAdded: false,
         visitedObj: {},
         bluePlaquesAdded: false,
-        remaOutletsAdded: false,
         visited: 0,
         magicNumber: 0,
         comparison: 0,
@@ -99,6 +121,8 @@ export default {
         streetsLookedUp: false,
         streetsNotFound: [],
         streetsParsed: false,
+        remaOutletsParsed: false,
+        kiwiOutletsParsed: false,
         map: '',
         coordinates: [],
         iconSize: [20,35],
@@ -114,11 +138,15 @@ export default {
         myposition: false,
         positionFound: false,
         staticMapUrl: '',
-        showStatic: false
+        showStatic: false,
+        RemaAdded: false,
+        KiwiAdded: false,
+        maxAttempts: 0,
+        RemaRetrieved: false,
+        KiwiRetrieved: false
     }
   },
   created: function () {
-        this.getBluePlaques();
         this.getAllStreets();
         this.pollPosition();
   },
@@ -139,25 +167,77 @@ export default {
         var count = 0;
         var streets = this.visitedStreets;
         for (let value of streets) {
-          var s = this.createQuery(value.adresse);
+          var gatenavn = value.adresse;
+          gatenavn = gatenavn.replace(' ','%20');
+          var s = this.createQuery(gatenavn);
           var date_visited = value.datobesøkt +'.' + + value.år;
           this.retrieveStreetLatLon(s,value.adresse,date_visited);
         }
       }
       this.streetsParsed = true;
     },
+    kiwiOutlets: function() {
+      if(!this.kiwiOutletsParsed){
+        this.parseAddresses(this.kiwiOutlets, 'kiwi');
+      }
+      this.kiwiOutletsParsed = true;
+    },
+
+    remaOutlets: function() {
+      if(!this.remaOutletsParsed){
+        this.parseAddresses(this.remaOutlets, 'rema');
+      }
+      this.remaOutletsParsed = true;
+    },
     coordinates: function() {
       this.mapclicked = true;
     },
     waypoints: function() {
-        if(this.waypoints.length > 1){
-          this.routepossible = true;
-        }else {
-          this.routepossible = false;
-        }
+      if(this.waypoints.length > 1){
+        this.routepossible = true;
+      }else {
+        this.routepossible = false;
+      }
     }
   },
   methods:  {
+
+      parseAddresses: function(streets, outlet){
+        var count = 0;
+        for (let value of streets) {
+          var fulladresse = value.adresse;
+          var adresse = fulladresse;
+          var numberPattern = /\d+/g;
+          var nummer = adresse.match(numberPattern);
+          var gatenavn = adresse.replace(/\d+\s*/g, "");
+          gatenavn = gatenavn.replace('-', '');
+          var urlgatenavn = gatenavn;
+          var occ = urlgatenavn.split(' ');
+          var newstring = '';
+          var newstring2 = '';
+          if(occ.length>1){
+            var t = occ[occ.length-1];
+            if(t.length==1){  /* means we have a single letter */
+              for(var i=0;i<occ.length-1;i++){
+                newstring += occ[i];
+                newstring2 += occ[i];
+                if(i<occ.length-2){
+                  newstring+= '%20';
+                  newstring2+= ' ';
+                }
+              }
+              if(newstring.length>2){
+                urlgatenavn = newstring;
+                gatenavn = newstring2;
+              }
+            }
+          }
+
+          var q = this.createAccurateQuery(urlgatenavn, nummer);
+          this.retrieveAddressLatLon(q,gatenavn,nummer, fulladresse, outlet);
+        }
+
+      },
       initMap: function() {
 
         var baseMaps = {
@@ -228,26 +308,40 @@ export default {
         this.currentMarkerId = this.addMarker(this.currentPosition, 'min posisjon', 'orange', 'small', 'current' );
         this.positionFound = true;
       },
-      getBluePlaques: function() {
-          this.axios.get('api/v1/oslogater')
-          .then(response => {
-            if (response.data) {
-              var bluelist = this.blueSigns = response.data.blaaskilt;
-              self = this;
-              self.bluePlaqueList = [];
-              bluelist.forEach(function(value, index ) {
-                self.bluePlaqueList.push({'title':value.navn, 'adresse': value.adresse});
-              });
-            }
-        })
-      },
+      /* from the api, we get data for various addresses, and store them client side */
       getAllStreets: function() {
           this.axios.get('api/v1/oslogater')
           .then(response => {
             if (response.data) {
               this.allStreets = response.data.gater;
+
+              if(response.data.blaaskilt){
+                var bluelist = this.blueSigns = response.data.blaaskilt;
+                self = this;
+                self.bluePlaqueList = [];
+                bluelist.forEach(function(value, index ) {
+                  self.bluePlaqueList.push({'title':value.navn, 'adresse': value.adresse});
+                });
+              }
+
+              if(response.data.remabutikker){
+                var remaoutlets  = response.data.remabutikker;
+                remaoutlets.forEach(function(value, index ) {
+                  self.remaOutlets.push({'title':value.navn, 'adresse': value.adresse});
+                });
+              }
+
+              if(response.data.kiwibutikker){
+                var kiwioutlets  = response.data.kiwibutikker;
+                kiwioutlets.forEach(function(value, index ) {
+                  self.kiwiOutlets.push({'title':value.navn, 'adresse': value.adresse});
+                });
+              }
+
             }
-        })
+        }).catch(error => {
+          console.log("FEILMELDING 3" + error);
+        });
       },
       filterVisitedStreets: function() {
           var streets = this.allStreets;
@@ -305,6 +399,7 @@ export default {
           useZoomParameter: true,
           summaryTemplate: '<h2>{name}</h2><h3>{distance}, {time}',
           waypointMode: 'snap',
+          language: 'en',
           lineOptions: {
             styles: [{color: 'green', opacity: 0.5, weight: 7}]
           },
@@ -393,14 +488,40 @@ export default {
           });
         }
       },
+      handleKiwiOutlets: function() {
+          var self = this;
+          if(self.KiwiAdded){
+            self.kiwiMarkers = self.removeMarkers(self.kiwiMarkers);
+            self.KiwiAdded = false;
+          }else {
+            self.kiwiObjects.forEach(function(value, index ) {
+                try{
+                  var latlng = [value.lat, value.lon];
+                  var title = name + value.adresse + " " + value.gatenummer
+                  self.kiwiMarkers.push(self.placeMarker(latlng, title,'green'));
+                }catch (error){
+                  var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
+                }
+              });
+              self.KiwiAdded = true;
+          }
+      },
       handleRemaOutlets: function() {
           var self = this;
           if(self.RemaAdded){
             self.remaMarkers = self.removeMarkers(self.remaMarkers);
             self.RemaAdded = false;
           }else {
-              this.remaOutlets.forEach(function(value, index ) {
-          });
+              self.remaObjects.forEach(function(value, index ) {
+                  try{
+                    var latlng = [value.lat, value.lon];
+                    var title = "REMA - " + value.adresse + " " + value.gatenummer
+                    self.remaMarkers.push(self.placeMarker(latlng, title,'orange'));
+                  }catch (error){
+                    var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
+                  }
+                });
+                self.RemaAdded = true;
           }
       },
       success: function(position) {
@@ -422,37 +543,98 @@ export default {
         var filtrer = '&filtrer=adresser.representasjonspunkt.lat,adresser.representasjonspunkt.lon,adresser.postnummer,adresser.adressenavn';
         return query + filtrer;
       },
-      retrieveStreetLatLon: function(q,streetname,date_visited){
-        var mingate = streetname.replace('’', '\'');
-        var full_date = date_visited.replace(' ', '');
-
+      createAccurateQuery: function(gatenavn, gatenummer){
+        var query = 'https://ws.geonorge.no/adresser/v1/sok?adressenavn=' + gatenavn + '&nummer=' + gatenummer + '&kommunenummer=0301';
+        var filtrer = '&filtrer=adresser.representasjonspunkt.lat,adresser.representasjonspunkt.lon,adresser.postnummer,adresser.adressenavn,adresser.nummer';
+        return query + filtrer;
+      },
+      retrieveAddressLatLon: function(q, mingate, mittgatenummer, fulladresse, outlet){
         this.axios.get(q)
           .then(response => {
             if (response.data) {
               var streets = JSON.parse(JSON.stringify(response.data,0,2));
               var i = 0;
               var found = false;
+              var obj = {};
               for (let value of streets.adresser) {
                 i++;
-                if(value.adressenavn.toLowerCase() == mingate.toLowerCase()){
-                  var obj = {};
-                  obj['adresse'] = value.adressenavn;
-                  obj['dato'] = full_date;
-                  obj['lat'] = value.representasjonspunkt.lat;
-                  obj['lon'] = value.representasjonspunkt.lon;
-                  obj['postnummer'] = value.postnummer;
-                  obj['color'] = this.getCityDivisionColor(value.postnummer.substr(0,2));
-                  this.visitedStreetList.push(obj);
-                  found = true;
-                  return
+                if(value.adressenavn.toLowerCase().trim() == mingate.toLowerCase().trim()){
+                  if(value.nummer == mittgatenummer){
+                    obj['adresse'] = value.adressenavn;
+                    obj['gatenummer'] = value.nummer;
+                    obj['lat'] = value.representasjonspunkt.lat;
+                    obj['lon'] = value.representasjonspunkt.lon;
+                    obj['postnummer'] = value.postnummer;
+                    obj['fulladresse'] = fulladresse;
+                    obj['color'] = this.getCityDivisionColor(value.postnummer.substr(0,2));
+
+                    found = true;
+
+                    if(outlet == 'rema'){
+                      this.remaObjects.push(obj);
+                    }else if(outlet == 'kiwi'){
+                      this.kiwiObjects.push(obj);
+                    }else if(outlet == 'heliks'){
+                      //this.visitedStreetList.push(obj);
+                    }
+                    return
+                  }
+                }else{
+
+                  if(value.adressenavn.substring(1, 4) == mingate.substring(1, 4)){
+                    console.log("UNEQUAL: " + value.adressenavn + ' -->  ' + mingate);
+                    console.log("QUERY: " + q);
+                  }
                 }
               }
-              if(!found){
-                console.log("unable to find match for: " + mingate);
-                this.streetsNotFound.push(mingate);
+              return obj;
+            }
+        }).catch(error => {
+          console.log("FEILMELDING 1" + error);
+        });
+    },
+    retrieveStreetLatLon: function(q,streetname,date_visited){
+
+      var adresse = streetname.replace('’', '\'');
+      var full_date = 'N/A';
+      var found = false;
+      if(date_visited){
+        full_date = date_visited.replace(' ', '');
+      }
+
+      var addressList = [];
+      var att = 0;
+      this.axios.get(q)
+        .then(response => {
+          if (response.data) {
+            var streets = JSON.parse(JSON.stringify(response.data,0,2));
+
+            var i = 0;
+            var obj = {};
+            for (let value of streets.adresser) {
+              i++;
+              if(value.adressenavn.toLowerCase() == adresse.toLowerCase() && found == false){
+                obj['adresse'] = value.adressenavn;
+                obj['dato'] = full_date;
+                obj['lat'] = value.representasjonspunkt.lat;
+                obj['lon'] = value.representasjonspunkt.lon;
+                obj['postnummer'] = value.postnummer;
+                obj['color'] = this.getCityDivisionColor(value.postnummer.substr(0,2));
+                this.visitedStreetList.push(obj);
+                found = true;
+                return
               }
             }
-        });
+
+            if(!found){
+              console.log("unable to find match for: " + adresse);
+              console.log(q);
+              this.streetsNotFound.push(adresse);
+            }
+          }
+      }).catch(error => {
+        this.maxAttempts++;
+      });
     }
   }
 }
@@ -514,16 +696,25 @@ export default {
     margin-left: 1rem;
   }
 
-  .decimal {
-    list-style-type: decimal;
+  .decimal, .greek, .hebrew, .latin {
     margin-left: 0.5rem;
     padding-left: 0;
   }
 
+  .decimal {
+    list-style-type: decimal;
+  }
+
   .greek {
     list-style-type: lower-greek;
-    margin-left: 0.5rem;
-    padding-left: 0;
+  }
+
+  .hebrew {
+    list-style-type: hebrew;
+  }
+
+  .latin {
+    list-style-type: latin;
   }
 
   .left-side, .right-side {
@@ -534,11 +725,9 @@ export default {
     .left-side, .right-side {
       grid-column-start: none;
     }
-
     .right-side {
       grid-row: 2;
     }
-
   }
 
   .button-row {
@@ -553,8 +742,20 @@ export default {
     background-color: rgb(48,50,78);
     color: white;
   }
+
+  .darkgreen {
+    background-color: green;
+    color: white;
+  }
+
   .darkgrey {
     background-color: #A9A9A9;
+    color: white;
+  }
+
+  .darkorange {
+    background-color: orange;
+    color: black;
   }
 
   ul {
@@ -574,7 +775,7 @@ export default {
     margin: 1rem;
   }
 
-  .visited, .blaaskilt {
+  .visited, .blaaskilt, .remaoutlets, .kiwioutlets {
     padding: 1rem;
     border: 3px solid black;
     font-size: 9px;
@@ -583,32 +784,31 @@ export default {
     margin: 1rem;
   }
 
-  .static1 {
+  .static1, .static2, .static3, .static4 {
     position:absolute;
     top: 100px;
-    left:17px;
     z-index: 1000;
+  }
+
+  .static1 {
+    left:17px;
   }
 
   .static2 {
-    position:absolute;
-    top: 100px;
     left: 125px;
-    z-index: 1000;
   }
 
   .static3 {
-    position:absolute;
-    top: 100px;
-    left:238px;
-    z-index: 1000;
+    left:235px;
   }
 
   .static4 {
-    position:absolute;
-    top: 250px;
-    left:17px;
-    z-index: 1000;
+    left:350px;
+  }
+
+  .red {
+    background-color: red;
+    color: white;
   }
 
   .green {
@@ -621,8 +821,8 @@ export default {
     color: white;
   }
 
-  .red {
-    background-color:red;
+  .yellow {
+    background-color:yellow;
     color: white;
   }
 
