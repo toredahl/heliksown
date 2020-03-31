@@ -15,8 +15,12 @@ var visitedStreets = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHK
 //https://docs.google.com/spreadsheets/d/e/2PACX-1vRSrCO7HMGNuot2J78xPMTrfOQWCSW-ZQh4lwGmCaNTbIZ1ymQp-IwS9fCtSrU9AsMvC-eEir0YSt9i/pubhtml
 var remaURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=3&columns=false';
 var kiwiURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=4&columns=false';
+var jokerURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=5&columns=false';
+var bunnprisURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=6&columns=false';
+var coopURL = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=7&columns=false';
+var playlist = 'http://gsx2json.com/api?id=17RCE9ZwQsC8kV6wnRdYAizcxZgbeHKY8WmL7wt_v8aE&sheet=8&columns=false';
 
-var json_plants;
+var json_plants, json_tunes;
 var limit = 10;
 let qcollection = [];
 var qlinks = [];
@@ -24,9 +28,11 @@ var jquestions;
 var q, p;
 var streets = [],
     blueplaques = [],
-    remaoutlets = []
-    kiwioutlets = []
-    ;
+    remaoutlets = [],
+    kiwioutlets = [],
+    coopoutlets = [],
+    bunnprisoutlets = [],
+    jokeroutlets = [];
 
 const printNow = () => {
   var d = Date();
@@ -109,6 +115,34 @@ const updatePlants = () => {
   });
 }
 
+/********* PLAYLIST api ***********/
+
+const countTunes = async () => {
+  const tunes = getDataAxios(playlist)
+    .then(response => {
+      if (response.data) {
+        json_tunes = Object.entries(response.data.rows);
+      }
+    })
+    .catch(error => {
+      console.log(error)
+    })
+}
+
+const updateTunes = () => {
+  countTunes()
+  app.get('/api/v1/tunes', (req, res) => {
+    res.status(200).send({
+      success: 'true',
+      message: 'Playlist hentet - SUKSESS ',
+      tunes:  json_tunes
+    })
+  });
+}
+
+/********* END PLAYLIST api ***********/
+
+
 const countStreets = async () => {
   const breeds = getDataAxios(visitedStreets)
     .then(response => {
@@ -135,24 +169,27 @@ const getBluePlaques = async () => {
 }
 
 const getOutlets = async (clist, url) => {
-  console.log("url is: " + url);
+  //console.log("url is: " + url);
   var list = [];
-  //const outlets = getDataAxios(remaURL)
-  const outlets = getDataAxios(url)
+  let outlets = getDataAxios(url)
     .then(response => {
       if (response.data) {
         if(clist == 1){
           remaoutlets = response.data.rows;
         }else if(clist == 2){
           kiwioutlets = response.data.rows;
+        }else if(clist == 3){
+          jokeroutlets = response.data.rows;
+        }else if(clist == 4){
+          bunnprisoutlets = response.data.rows;
+        }else if(clist == 5){
+          coopoutlets = response.data.rows;
         }
-
       }
     })
     .catch(error => {
       console.log(error)
     })
-
 }
 
 const getStreetData = async (url, list) => {
@@ -176,6 +213,9 @@ const updateStreets = () => {
   getBluePlaques();
   getOutlets(1,remaURL);
   getOutlets(2,kiwiURL);
+  getOutlets(3,jokerURL);
+  getOutlets(4,bunnprisURL);
+  getOutlets(5,coopURL);
 
   app.get('/api/v1/oslogater', (req, res) => {
     res.status(200).send({
@@ -184,7 +224,10 @@ const updateStreets = () => {
       gater:  streets,
       blaaskilt: blueplaques,
       remabutikker: remaoutlets,
-      kiwibutikker: kiwioutlets
+      kiwibutikker: kiwioutlets,
+      jokerbutikker: jokeroutlets,
+      bunnprisbutikker: bunnprisoutlets,
+      coopbutikker: coopoutlets
     })
   });
 }
@@ -193,12 +236,14 @@ const updateStreets = () => {
 updateQuestions()
 updatePlants()
 updateStreets()
+updateTunes()
 // then set up hourly poll
 setInterval(function(){
   console.log("hourly update..." + printNow());
   updatePlants();
   updateQuestions();
-}, 3600000);
+  updateTunes()
+}, 600000);
 
 app.use(serveStatic(__dirname + "/dist"));
 var port = process.env.PORT || 5000;
