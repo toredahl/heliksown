@@ -7,18 +7,24 @@
     </div>
 
     <div class="right-side" style="">
+
       <div id="mapButtons" class="button-row">
-        <button id="mark" class="static1 red" @click="handleStreetMarkers()">Besøkte</button>
+        <button id="mark" class="static1 white" @click="handleStreetMarkers()">Besøkte</button>
         <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
-        <button id="rema-outlets" class="static3 orange" @click="handleRemaOutlets()">REMA</button>
-        <button id="kiwi-outlets" class="static4 green" @click="handleKiwiOutlets()">KIWI</button>
+        <button id="rema-outlets" v-if="RemaReady" class="static3 orange" @click="handleRemaOutlets()">REMA</button>
+        <button id="kiwi-outlets"  v-if="KiwiReady" class="static4 green" @click="handleKiwiOutlets()">KIWI</button>
+        <button id="joker-outlets"  v-if="JokerReady" class="static5 violet" @click="handleJokerOutlets()">JOKER</button>
+        <button id="bunnpris-outlets"  v-if="BunnprisReady" class="static6 yellow" @click="handleBunnprisOutlets()">BUNN</button>
+        <button id="coop-outlets"  v-if="CoopReady" class="static7 red" @click="handleCoopOutlets()">COOP</button>
       </div>
+
       <h3>Klikk på kart for å se koordinater</h3>
       <div id="coords" class="status">
         Siste koordinat: {{coordinates}}
         <hr>
         Rute: {{waypoints}}
       </div>
+
       <button class="regular" @click="addPoint()" v-if="mapclicked">Legg til punkt</button>
       <button class="regular" @click="plotRoute()" v-if="routepossible">Vis rute</button>
       <button class="regular"  @click="clearRoute()" v-if="routepossible">Fjern</button>
@@ -46,7 +52,7 @@
         </ul>
       </div>
       <div class="blaaskilt darkblue">
-        <ul id="blue-signs" class="greek">
+        <ul id="blue-signs" class="decimal">
           <li v-for="item in bluePlaqueList" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
@@ -68,9 +74,32 @@
           </li>
         </ul>
       </div>
+
+      <div class="jokeroutlets violet">
+        <ul id="joker-butikker" class="latin">
+          <li v-for="item in jokerOutlets" :key="item.id">
+            {{item.title }} - {{ item.adresse }}  </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bunnprisoutlets yellow">
+        <ul id="bunnpris-butikker" class="latin">
+          <li v-for="item in bunnprisOutlets" :key="item.id">
+            {{item.title }} - {{ item.adresse }}  </span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="coopoutlets red">
+        <ul id="coop-butikker" class="latin">
+          <li v-for="item in coopOutlets" :key="item.id">
+            {{item.title }} - {{ item.adresse }}  </span>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -78,6 +107,7 @@
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import html2canvas from 'html2canvas';
+
 
 var mapboxAttribution = '<a href="http://www.kartverket.no/">Kartverket</a>';
 var mapboxUrl = 'https://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=norges_grunnkart_graatone&zoom={z}&x={x}&y={y}';
@@ -109,6 +139,15 @@ export default {
         kiwiMarkers: [],
         kiwiOutlets: [],
         kiwiObjects: [],
+        jokerMarkers: [],
+        jokerOutlets: [],
+        jokerObjects: [],
+        bunnprisMarkers: [],
+        bunnprisOutlets: [],
+        bunnprisObjects: [],
+        coopMarkers: [],
+        coopOutlets: [],
+        coopObjects: [],
         visitedStreetList: [],
         visitedStreetsLayer: null,
         markersAdded: false,
@@ -123,6 +162,9 @@ export default {
         streetsParsed: false,
         remaOutletsParsed: false,
         kiwiOutletsParsed: false,
+        jokerOutletsParsed: false,
+        bunnprisOutletsParsed: false,
+        coopOutletsParsed: false,
         map: '',
         coordinates: [],
         iconSize: [20,35],
@@ -141,9 +183,18 @@ export default {
         showStatic: false,
         RemaAdded: false,
         KiwiAdded: false,
+        JokerAdded: false,
         maxAttempts: 0,
         RemaRetrieved: false,
-        KiwiRetrieved: false
+        KiwiRetrieved: false,
+        JokerRetrieved: false,
+        BunnprisRetrieved: false,
+        RemaReady: false,
+        KiwiReady: false,
+        BunnprisReady: false,
+        JokerReady: false,
+        CoopReady: false
+
     }
   },
   created: function () {
@@ -157,6 +208,22 @@ export default {
     currentPosition: function() {
       this.updateCurrentPosition();
     },
+    BunnprisReady: function() {
+      console.log('%c BunnprisReady', 'background-color: yellow; font-size: 20px; color: darkblue;');
+    },
+    KiwiReady: function() {
+      console.log('%c KiwiReady', 'background-color: green; font-size: 20px; color: white;');
+    },
+    RemaReady: function() {
+      console.log('%c RemaReady', 'background-color: darkblue; font-size: 20px; color: white;');
+    },
+    JokerReady: function() {
+      console.log('%c JokerReady', 'background-color: violet; font-size: 20px; color: white;');
+    },
+    CoopReady: function() {
+      console.log('%c CoopReady', 'background-color: red; font-size: 20px; color: white;');
+    },
+
     // when we have all the streets, we filter out those visited and keep them
     allStreets: function() {
       this.filterVisitedStreets();
@@ -182,13 +249,31 @@ export default {
       }
       this.kiwiOutletsParsed = true;
     },
-
+    jokerOutlets: function() {
+      if(!this.jokerOutletsParsed){
+        this.parseAddresses(this.jokerOutlets, 'joker');
+      }
+      this.jokerOutletsParsed = true;
+    },
     remaOutlets: function() {
       if(!this.remaOutletsParsed){
         this.parseAddresses(this.remaOutlets, 'rema');
       }
       this.remaOutletsParsed = true;
     },
+    bunnprisOutlets: function() {
+      if(!this.bunnprisOutletsParsed){
+        this.parseAddresses(this.bunnprisOutlets, 'bunnpris');
+      }
+      this.bunnprisOutletsParsed = true;
+    },
+    coopOutlets: function() {
+      if(!this.coopOutletsParsed){
+        this.parseAddresses(this.coopOutlets, 'coop');
+      }
+      this.coopOutletsParsed = true;
+    },
+
     coordinates: function() {
       this.mapclicked = true;
     },
@@ -236,7 +321,6 @@ export default {
           var q = this.createAccurateQuery(urlgatenavn, nummer);
           this.retrieveAddressLatLon(q,gatenavn,nummer, fulladresse, outlet);
         }
-
       },
       initMap: function() {
 
@@ -304,7 +388,6 @@ export default {
         if(this.positionFound){
           this.removeMarkers([this.currentMarkerId]);
         }
-
         this.currentMarkerId = this.addMarker(this.currentPosition, 'min posisjon', 'orange', 'small', 'current' );
         this.positionFound = true;
       },
@@ -335,6 +418,27 @@ export default {
                 var kiwioutlets  = response.data.kiwibutikker;
                 kiwioutlets.forEach(function(value, index ) {
                   self.kiwiOutlets.push({'title':value.navn, 'adresse': value.adresse});
+                });
+              }
+
+              if(response.data.jokerbutikker){
+                var jokeroutlets  = response.data.jokerbutikker;
+                jokeroutlets.forEach(function(value, index ) {
+                  self.jokerOutlets.push({'title':value.navn, 'adresse': value.adresse});
+                });
+              }
+
+              if(response.data.bunnprisbutikker){
+                var bunnprisoutlets  = response.data.bunnprisbutikker;
+                bunnprisoutlets.forEach(function(value, index ) {
+                  self.bunnprisOutlets.push({'title':value.navn, 'adresse': value.adresse});
+                });
+              }
+
+              if(response.data.coopbutikker){
+                var coopoutlets  = response.data.coopbutikker;
+                coopoutlets.forEach(function(value, index ) {
+                  self.coopOutlets.push({'title':value.navn, 'adresse': value.adresse});
                 });
               }
 
@@ -524,6 +628,61 @@ export default {
                 self.RemaAdded = true;
           }
       },
+      handleJokerOutlets: function() {
+          var self = this;
+          if(self.JokerAdded){
+            self.jokerMarkers = self.removeMarkers(self.jokerMarkers);
+            self.JokerAdded = false;
+          }else {
+              self.jokerObjects.forEach(function(value, index ) {
+                  try{
+                    var latlng = [value.lat, value.lon];
+                    var title = "JOKER - " + value.adresse + " " + value.gatenummer;
+                    self.jokerMarkers.push(self.placeMarker(latlng, title,'violet'));
+                  }catch (error){
+                    var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
+                  }
+                });
+                self.JokerAdded = true;
+          }
+      },
+      handleBunnprisOutlets: function() {
+          var self = this;
+          if(self.BunnprisAdded){
+            self.bunnprisMarkers = self.removeMarkers(self.bunnprisMarkers);
+            self.BunnprisAdded = false;
+          }else {
+              self.bunnprisObjects.forEach(function(value, index ) {
+                  try{
+                    var latlng = [value.lat, value.lon];
+                    var title = "BUNNPRIS - " + value.title + " - " + value.adresse + " " + value.gatenummer;
+
+                    self.bunnprisMarkers.push(self.placeMarker(latlng, title,'yellow'));
+                  }catch (error){
+                    var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
+                  }
+                });
+                self.BunnprisAdded = true;
+          }
+      },
+      handleCoopOutlets: function() {
+          var self = this;
+          if(self.CoopAdded){
+            self.coopMarkers = self.removeMarkers(self.coopMarkers);
+            self.CoopAdded = false;
+          }else {
+              self.coopObjects.forEach(function(value, index ) {
+                  try{
+                    var latlng = [value.lat, value.lon];
+                    var title = "COOP - " + value.title + " - " + value.adresse + " " + value.gatenummer;
+                    self.coopMarkers.push(self.placeMarker(latlng, title,'red'));
+                  }catch (error){
+                    var t1Closure = self.template`Feil på : ${0} med feilmelding ${1} `;
+                  }
+                });
+                self.CoopAdded = true;
+          }
+      },
       success: function(position) {
         self.currentPosition = [position.coords.latitude, position.coords.longitude];
         var yPos = self.template`Din posisjon (lat,lng): ${0}, ${1} `;
@@ -574,6 +733,12 @@ export default {
                       this.remaObjects.push(obj);
                     }else if(outlet == 'kiwi'){
                       this.kiwiObjects.push(obj);
+                    }else if(outlet == 'joker'){
+                      this.jokerObjects.push(obj);
+                    }else if(outlet == 'bunnpris'){
+                      this.bunnprisObjects.push(obj);
+                    }else if(outlet == 'coop'){
+                      this.coopObjects.push(obj);
                     }else if(outlet == 'heliks'){
                       //this.visitedStreetList.push(obj);
                     }
@@ -582,11 +747,24 @@ export default {
                 }else{
 
                   if(value.adressenavn.substring(1, 4) == mingate.substring(1, 4)){
-                    console.log("UNEQUAL: " + value.adressenavn + ' -->  ' + mingate);
-                    console.log("QUERY: " + q);
+                    //console.log("UNEQUAL: " + value.adressenavn + ' -->  ' + mingate);
+                    //console.log("QUERY: " + q);
                   }
                 }
               }
+              //console.log("READY WITH " + outlet);
+              if(outlet == "kiwi"){
+                this.KiwiReady = true;
+              }else if(outlet == "rema"){
+                this.RemaReady = true;
+              }else if(outlet == "bunnpris"){
+                this.BunnprisReady = true;
+              }else if(outlet == "joker"){
+                this.JokerReady = true;
+              }else if(outlet == "coop"){
+                this.CoopReady = true;
+              }
+
               return obj;
             }
         }).catch(error => {
@@ -628,7 +806,7 @@ export default {
 
             if(!found){
               console.log("unable to find match for: " + adresse);
-              console.log(q);
+              //console.log(q);
               this.streetsNotFound.push(adresse);
             }
           }
@@ -775,35 +953,47 @@ export default {
     margin: 1rem;
   }
 
-  .visited, .blaaskilt, .remaoutlets, .kiwioutlets {
-    padding: 1rem;
+  .visited, .blaaskilt, .remaoutlets, .kiwioutlets, .jokeroutlets, .bunnprisoutlets, .coopoutlets {
+    padding: 0.5rem;
     border: 3px solid black;
     font-size: 9px;
     overflow: scroll;
-    height: 250px;
-    margin: 1rem;
+    height: 220px;
+    margin: 0.5rem;
   }
 
-  .static1, .static2, .static3, .static4 {
+  .static1, .static2, .static3, .static4, .static5, .static6, .static7 {
     position:absolute;
     top: 100px;
     z-index: 1000;
   }
 
   .static1 {
-    left:17px;
+    left:7px;
   }
 
   .static2 {
-    left: 125px;
+    left: 110px;
   }
 
   .static3 {
-    left:235px;
+    left:220px;
   }
 
   .static4 {
-    left:350px;
+    left:330px;
+  }
+
+  .static5 {
+    left: 440px;
+  }
+
+  .static6 {
+    left: 550px;
+  }
+
+  .static7 {
+    left: 660px;
   }
 
   .red {
@@ -811,8 +1001,17 @@ export default {
     color: white;
   }
 
+  .white {
+    background-color: white;
+    color: red;
+  }
   .green {
     background-color: green;
+    color: white;
+  }
+
+  .violet {
+    background-color: violet;
     color: white;
   }
 
@@ -823,7 +1022,7 @@ export default {
 
   .yellow {
     background-color:yellow;
-    color: white;
+    color: darkblue;
   }
 
   button {
