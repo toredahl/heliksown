@@ -6,16 +6,18 @@
       <div id="map" v-on:click="clickMap($event)"></div>
     </div>
 
-    <div class="right-side" style="">
+    <div class="right-side" style="padding: 10px;">
 
       <div id="mapButtons" class="button-row">
-        <button id="mark" class="static1 white" @click="handleStreetMarkers()">Besøkte</button>
-        <button id="blue-signs" class="static2 darkblue" @click="handleBluePlaques()">Blå skilt</button>
-        <button id="rema-outlets" v-if="RemaReady" class="static3 orange" @click="handleRemaOutlets()">REMA</button>
-        <button id="kiwi-outlets"  v-if="KiwiReady" class="static4 green" @click="handleKiwiOutlets()">KIWI</button>
-        <button id="joker-outlets"  v-if="JokerReady" class="static5 violet" @click="handleJokerOutlets()">JOKER</button>
-        <button id="bunnpris-outlets"  v-if="BunnprisReady" class="static6 yellow" @click="handleBunnprisOutlets()">BUNN</button>
-        <button id="coop-outlets"  v-if="CoopReady" class="static7 red" @click="handleCoopOutlets()">COOP</button>
+        <div class="button-holder">
+          <button id="mark" class="white" @click="handleStreetMarkers()">Besøkte</button>
+          <button id="blue-signs" class="darkblue" @click="handleBluePlaques()">Blå skilt</button>
+          <button id="rema-outlets" v-if="RemaReady" class="orange" @click="handleRemaOutlets()">REMA</button>
+          <button id="kiwi-outlets"  v-if="KiwiReady" class="green" @click="handleKiwiOutlets()">KIWI</button>
+          <button id="joker-outlets"  v-if="JokerReady" class="violet" @click="handleJokerOutlets()">JOKER</button>
+          <button id="bunnpris-outlets"  v-if="BunnprisReady" class="yellow" @click="handleBunnprisOutlets()">BUNN</button>
+          <button id="coop-outlets"  v-if="CoopReady" class="red" @click="handleCoopOutlets()">COOP</button>
+        </div>
       </div>
 
       <h3>Klikk på kart for å se koordinater</h3>
@@ -54,13 +56,13 @@
       <div class="blaaskilt darkblue">
         <ul id="blue-signs" class="decimal">
           <li v-for="item in bluePlaqueList" :key="item.id">
-            {{item.title }} - {{ item.adresse }}  </span>
+            <i>{{item.title }}</i> - {{ item.adresse }}  </span>
           </li>
         </ul>
       </div>
 
       <div class="remaoutlets darkorange">
-        <ul id="rema-butikker" class="hebrew">
+        <ul id="rema-butikker" class="decimal">
           <li v-for="item in remaOutlets" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
@@ -68,7 +70,7 @@
       </div>
 
       <div class="kiwioutlets green">
-        <ul id="kiwi-butikker" class="latin">
+        <ul id="kiwi-butikker" class="decimal">
           <li v-for="item in kiwiOutlets" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
@@ -76,7 +78,7 @@
       </div>
 
       <div class="jokeroutlets violet">
-        <ul id="joker-butikker" class="latin">
+        <ul id="joker-butikker" class="decimal">
           <li v-for="item in jokerOutlets" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
@@ -84,7 +86,7 @@
       </div>
 
       <div class="bunnprisoutlets yellow">
-        <ul id="bunnpris-butikker" class="latin">
+        <ul id="bunnpris-butikker" class="decimal">
           <li v-for="item in bunnprisOutlets" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
@@ -92,7 +94,7 @@
       </div>
 
       <div class="coopoutlets red">
-        <ul id="coop-butikker" class="latin">
+        <ul id="coop-butikker" class="decimal">
           <li v-for="item in coopOutlets" :key="item.id">
             {{item.title }} - {{ item.adresse }}  </span>
           </li>
@@ -830,26 +832,26 @@ export default {
   }
 
   #HeliksMap h3 {
-    font-size: 1rem;
-    margin-left: 1rem;
+    font-size: 14px;
+    margin-left: 5px;
   }
 
   #HeliksMap .leaflet-routing-alternatives-container, .leaflet-routing-alternatives-container, .heliks-map-route-panel {
     background-color: rgba(256,256,256,0.6);
-    padding-left: 0.5rem;
+    padding-left: 5px;
   }
 
   #HeliksMap .leaflet-routing-alternatives-container h2, .leaflet-routing-alternatives-container h2, .heliks-map-route-panel h2 {
     cursor: pointer;
-    font-size: 1.4rem;
+    font-size: 15px;
   }
 
   #map {
-    height: 67.5vh;
+    height: 77.5vh;
   }
 
   #img-out {
-    margin-left: 1rem;
+    margin-left: 5px;
   }
 
   .route-panel {
@@ -858,11 +860,11 @@ export default {
   }
 
   .route-panel h2 {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .route-panel h3 {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .dot {
@@ -871,12 +873,12 @@ export default {
     background-color: #bbb;
     border-radius: 50%;
     display: inline-block;
-    margin-left: 1rem;
+    margin-left: 5px;
   }
 
   .decimal, .greek, .hebrew, .latin {
-    margin-left: 0.5rem;
-    padding-left: 0;
+    margin-left: 5px;
+    padding-left: 5px;
   }
 
   .decimal {
@@ -910,16 +912,17 @@ export default {
 
   .button-row {
     position: absolute;
-    top: 0;
-    left: 0;
-    top: -90px;
-    left: 37px;
+    left: 50px;
+    z-index: 5000;
   }
 
   .darkblue, .darkblue ul li {
     background-color: rgb(48,50,78);
     color: white;
   }
+
+  .darkblue, .darkblue ul li i{ color: yellow;}
+
 
   .darkgreen {
     background-color: green;
@@ -947,19 +950,19 @@ export default {
   }
 
   .status {
-    padding: .5rem;
+    padding: 5px;
     font-size: 11px;
     border:2px solid black;
-    margin: 1rem;
+    //margin: 1rem;
   }
 
   .visited, .blaaskilt, .remaoutlets, .kiwioutlets, .jokeroutlets, .bunnprisoutlets, .coopoutlets {
-    padding: 0.5rem;
+    padding: 5px;
     border: 3px solid black;
     font-size: 9px;
     overflow: scroll;
     height: 220px;
-    margin: 0.5rem;
+    margin: 5px;
   }
 
   .static1, .static2, .static3, .static4, .static5, .static6, .static7 {
@@ -973,7 +976,7 @@ export default {
   }
 
   .static2 {
-    left: 110px;
+    left: 70px;
   }
 
   .static3 {
@@ -1027,13 +1030,13 @@ export default {
 
   button {
     -webkit-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
-  -moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
-  box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
-      padding: 0.5rem 0.75rem;
-    font-size: 1rem;
+    -moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+    padding: 3px 6px;
+    font-size: 10px;
     border-radius: 10px;
     border:1px solid white;
-    min-width: 100px;
+    min-width: 50px;
   }
 
   .yellowIcon {
@@ -1042,12 +1045,12 @@ export default {
   }
 
   .regular {
-    padding: 0.5rem 0.75rem;
-    font-size: 1rem;
+    padding: 8px 16px;
+    font-size: 11px;
     border-radius: 10px;
     border: 1px solid grey;
     min-width: 100px;
-    margin: .25rem 0 0.25rem .5rem;
+    margin: 4px 0 4px 8px;
     box-shadow:none;
   }
 
